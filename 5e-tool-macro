@@ -1,0 +1,99 @@
+var bardOffset = 0; //This macro automatically determines the die size to use for Bardic Inspiration based on your level. If your party features a bard whose level doesn't match yours (i.e. a multiclassed bard/sorcerer or a sidekick of a different level), edit this value. For multiclassing, typical values would be -1, -2, etc.
+
+function cleanString(input) {
+  return input.toLowerCase().replace(/{.*?}/g, "").replace(/\[.*?\]/g, "").replace(/<.*?>/g, "").replace(/\(.*?\)/g, "").replace(/\W/g, "");
+}
+var theToolsStart = actor.items.find(i => cleanString(i.name) == cleanString(this.data.name) && i.type == "tool");
+
+if(theToolsStart == null){
+  ui.notifications.error("You do not have any tools called '"+this.data.name+"' in your inventory. If you should, check the spelling of this macro's name and the tool's name to make sure they match and try again.");
+}else{
+  var theTools = actor.items.get(theToolsStart.id).data;
+  var toolDefault = theTools.data.ability;
+  var profMult = theTools.data.proficient;
+  var toolImage = theTools.img;
+  var toolName = theTools.name;
+  var toolFlavor = `<img src="` + toolImage + `" style="display: inline-block; vertical-align: middle; width: 13%; margin: 1%;"><h2 style="display: inline-block; vertical-align: middle; width: 83%; margin: 1%; text-align: center;">`+ toolName +`</h2>`
+
+  var abilityNames = ["str", "dex", "con", "int", "wis", "cha"];
+  var abilitySelection = new Array(abilityNames.length);
+  var i;
+  for (i = 0; i < abilitySelection.length; i++) {
+    if(toolDefault.toLowerCase().substring(0,3) == abilityNames[i].toLowerCase().substring(0,3)) {
+      abilitySelection[i] = "selected";
+    }
+  }
+
+  var rollNames = ["publicroll", "gmroll", "blindroll", "selfroll"];
+  var rollSelection = new Array(rollNames.length);
+  var i;
+  for (i = 0; i < rollSelection.length; i++) {
+    if(game.settings.get("core", "rollMode").toLowerCase().substring(0,3) == rollNames[i].toLowerCase().substring(0,3)) {
+      rollSelection[i] = "selected";
+    }
+  }
+
+  function better5ETools(toolAdvantage){
+
+    var toolCharacter = actor.getRollData();
+    var toolAbility = $("#pickToolsAbility").val();
+    var toolRoll = "";
+    var bardInspo = "1d6";
+    var toolDice = "1d20";
+    var toolSituationStart =  $("#pickToolsSit").val();
+    var toolSituation = toolSituationStart.toLowerCase().replace(/[^khldrxcsm0-9 +-/*//]/g, "").replace(/(\b[a-z]\S+\b)/ig, "");
+
+    if(toolCharacter.details.level + bardOffset >= 15){
+      bardInspo = "1d12";
+    }else if(toolCharacter.details.level + bardOffset >= 10){
+      bardInspo = "1d10";
+    }else if(toolCharacter.details.level + bardOffset >= 5){
+      bardInspo = "1d8";
+    }
+
+    if(toolAdvantage == "Advantage"){
+      toolDice = "2d20kh";
+    }else if(toolAdvantage == "Disadvantage"){
+      toolDice = "2d20kl";
+    }
+
+    if(toolSituation != "" && toolSituation.toUpperCase().substring(0,1) != "+" || toolSituation != "" && toolSituation.toUpperCase().substring(0,1) != "-" || toolSituation != ""){
+      toolSituation = "+"+toolSituation;
+    }
+    if(toolSituationStart.toUpperCase().includes("G") == true){
+      toolSituation = toolSituation.concat("+1d4");
+    }
+    if(toolSituationStart.toUpperCase().includes("B") == true || toolSituationStart.toUpperCase().includes("IN") == true){
+      toolSituation = toolSituation.concat("+", bardInspo);
+    }
+
+    toolRoll = new Roll(toolDice + "+ @abilities."+toolAbility.toLowerCase().substring(0,3)+".mod + @attributes.prof*"+ profMult + toolSituation, toolCharacter);
+
+    toolRoll.toMessage({
+      flavor: toolFlavor,
+      speaker: ChatMessage.getSpeaker({actor : actor})
+      },{rollMode: $("#pickRollMode").val()});
+
+   }
+
+  let rollTool = new Dialog({
+    title: toolName,
+    content: "<label style='display: inline-block; width: 38%; vertical-align: middle;  margin: 1%;'>Formula</label><input type='text' style='display: inline-block; vertical-align: middle; width: 58%; margin: 1%; cursor: not-allowed;' placeholder='@mod + @prof + @bonus' readonly><label style='display: inline-block; vertical-align: middle;  width: 38%; margin: 1%;'>Ability Score</label><select id='pickToolsAbility' style='display: inline-block; vertical-align: middle;  width: 58%; margin: 1%;'><option value='str' "+abilitySelection[0]+">Strength</option><option value='dex' "+abilitySelection[1]+">Dexterity</option><option value='con' "+abilitySelection[2]+">Constitution</option><option value='int' "+abilitySelection[3]+">Intelligence</option><option value='wis' "+abilitySelection[4]+">Wisdom</option><option value='cha' "+abilitySelection[5]+">Charisma</option></select><label style='display: inline-block; width: 38%; vertical-align: middle;  margin: 1%;'>Situational Bonus?</label><input type='text' id='pickToolsSit' style='display: inline-block; vertical-align: middle; width: 58%; margin: 1%;' placeholder='e.g. +1d4, g, 1d8+3, or bardic'><label style='display: inline-block; vertical-align: middle;  width: 38%; margin: 1%;'>Roll Mode</label><select id='pickRollMode' style='display: inline-block; vertical-align: middle;  width: 58%; margin: 1%;'><option value='publicroll' "+rollSelection[0]+">Public Roll</option><option value='gmroll' "+rollSelection[1]+">Private GM Roll</option><option value='blindroll' "+rollSelection[2]+">Blind GM Roll</option><option value='selfroll' "+rollSelection[3]+">Self Roll</option></select>",
+    buttons: {
+      one: {
+        label: "Advantage",
+        callback: () => better5ETools("Advantage")
+      },
+      two: {
+        label: "Normal",
+        callback: () => better5ETools("Normal")
+      },
+      three: {
+        label: "Disadvantage",
+        callback: () => better5ETools("Disadvantage")
+      }
+    },
+    default: "two",
+  });
+  rollTool.render(true);
+}
