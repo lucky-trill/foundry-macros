@@ -1,0 +1,104 @@
+var defaultToCharacter = false; //"true" means the dialog will select a character to speak as by default; "false" means the dialog will select to speak as you, the player, by default;
+var activePlayersOnly = false; //"true" means the dialog is only populated with active players currently in the session; "false" means the dialog is populated with all players in the world.
+var warnIfNoTargets = true; //"true" means your whisper will not be posted if you did not select a player; "false" means your whisper will be posted for all players to see if you do not select a player.
+
+var check1 = "checked";
+var check2 = "";
+if(defaultToCharacter === true){
+	check1 = "";
+	check2 = "checked";
+}
+var whisperSpeakerID = game.user.data.character;
+if(canvas.tokens.controlled[0] !== undefined){
+	whisperSpeakerID = canvas.tokens.controlled[0].actor.id;    
+}
+if(activePlayersOnly === true){
+	var players = game.users.filter(player => player.active);
+}else{
+	var players = game.users;
+}
+var characters = game.actors;
+
+var checkOptions = "";
+var targets = Array.from(game.user.targets);
+players.forEach(player => {
+	if(player.id !== game.user.id){
+		var checked = "";
+		if(targets.length > 0){
+			for (let i = 0; i < targets.length; i++) {
+				if(game.actors.get(targets[i].data.actorId).data.permission[player.id] !== undefined && game.actors.get(targets[i].data.actorId).data.permission[player.id] > 2){
+					checked = "checked";
+				}
+			}
+		}
+		var ownedCharacters = "";
+		if(player.role == 4){
+			ownedCharacters = "Gamemaster";
+		}else if(player.role == 3){
+			ownedCharacters = "Assistant Gamemaster";
+		}else{
+			characters.forEach(character => {
+				if(character.data.permission[`${player.id}`] > 2){
+					var charName = character.name.replace(/'/g, '`');
+					ownedCharacters += " ["+charName+"] ";
+				}
+			});
+		}
+		checkOptions += `<input type='checkbox' id='${player.id}' name='${player.id}' value='${player.name}' ${checked} style='display:inline-block; vertical-align:middle; width:5%; margin:0px;'><label for='${player.id}' style='display:inline-block; vertical-align:middle; width:26%; margin:0px 1%; text-align:left;' title='${ownedCharacters}'>${player.name}</label>`;
+	}
+});
+
+var listOptions = "";
+characters.forEach(character => {
+	var selected = "";
+	if(character.id == whisperSpeakerID){
+		selected = "selected";	
+	}
+	if(character.permission > 2){
+		listOptions += `<option value='${character.id}' ${selected}>${character.name}</option>`;
+	}
+});
+
+var currentMessage = $("#chat-message").val();
+
+new Dialog({
+	title: "Whisper",
+	content: `<span style='display:inline-block; vertical-align: middle; width:20%; margin:0px 1%;'><b>Whisper to:</b></span><span style='display:inline-block; vertical-align:middle; width:78%; text-align:center; margin:0px;'>${checkOptions}</span><br><span style='display:inline-block; vertical-align: middle; width:20%; margin:5px 1% 0px 1%;'><b>Whisper as:</b></span><span style='display:inline-block; vertical-align:middle; width:78%; text-align:center; margin:5px 0px 0px 0px'><input type='radio' id='speaker1' name='speaker' value='yourself' ${check1} style='display:inline-block; vertical-align:middle; width:6%; margin:0px;'><label for='speaker1' style='display:inline-block; vertical-align:middle; width:20%; margin:0px 1%; text-align:left;'>Yourself</label><input type='radio' id='speaker2' name='speaker' value='character' ${check2} style='display:inline-block; vertical-align:middle; width:6%; margin:0px;'><label for='speaker2' style='display:inline-block; vertical-align:middle; width:61%; padding:0px 0px 0px 3%; margin:0px 1%; text-align:left;'><select name='characters' id='characters' style='width:100%;'>${listOptions}</select></label></span><br><textarea id='message' name='whisperText' rows='6' style='margin:5px 0px;'>${currentMessage}</textarea>`,
+	buttons: {
+		whisper: {   
+			label: "Send Whisper",
+			callback: (html) => createWhisper(html)
+		}
+	}
+}).render(true);
+
+function createWhisper(html) {
+	const whisperID = new Array();
+	var integer = 0;
+	players.forEach(player => {
+		if (html.find('[name="'+player.id+'"]:checked').length > 0){
+			whisperID[integer] = player.id;
+			integer = integer + 1;
+		}
+	});
+	var finalWhisperSpeaker = $("#characters").val()
+	var whisperMessage = html.find('[name="whisperText"]')[0].value;
+	if(whisperID.length < 1 && warnIfNoTargets === true){
+		ui.notifications.warn("You did not select a target for the whisper, so it did not send.");
+	}else{
+		if($('#speaker2:checked').length > 0){
+			ChatMessage.create({
+    			user : game.user.id,
+				speaker: {actor: finalWhisperSpeaker},
+    			content: whisperMessage,
+    			whisper : whisperID
+			});
+		}else{
+			ChatMessage.create({
+    			user : game.user.id,
+    			content: whisperMessage,
+    			whisper : whisperID
+			});			
+		}
+	}
+}
