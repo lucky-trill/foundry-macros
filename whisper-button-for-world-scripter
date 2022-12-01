@@ -1,0 +1,11 @@
+var whisperMacroName = "Whisper";
+
+var whisperStyling = "display: block; position: absolute; text-align:center; height: 30px; width: 35px; bottom: 2px; left: 2px; font-size: 20px; line-height: 28px; color: var(--color-text-dark-secondary);";
+
+var whisperElement = document.createElement("a");
+whisperElement.setAttribute("class", "fas fa-user-secret");
+whisperElement.setAttribute("id", "whisperButton");
+whisperElement.setAttribute("title", "Whisper");
+whisperElement.setAttribute("onclick", "game.macros.getName(`" + whisperMacroName + "`).execute()");
+whisperElement.setAttribute("style", whisperStyling);
+document.getElementById("chat-form").appendChild(whisperElement);
