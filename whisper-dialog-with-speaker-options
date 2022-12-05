@@ -12,7 +12,7 @@ if (defaultToCharacter === true) {
     check1 = "";
     check2 = "checked";
 }
-var whisperSpeakerID = game.user.data.character;
+var whisperSpeakerID = game.user.character.id;
 if (canvas.tokens.controlled[0] !== undefined) {
     whisperSpeakerID = canvas.tokens.controlled[0].actor.id;
 }
@@ -40,7 +40,7 @@ players.forEach(player => {
             ownedCharacters = "Gamemaster";
         } else if (player.role == 3) {
             ownedCharacters = "Assistant Gamemaster";
-        } else if (userConfigCharacterOnly == true && player.character !== null) {
+        } else if (userConfigCharacterOnly == true && player.character !== null && player.character !== undefined) {
             ownedCharacters = player.character.name;
         } else {
             characters.forEach(character => {
