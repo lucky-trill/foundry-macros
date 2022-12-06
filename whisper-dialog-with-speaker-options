@@ -12,8 +12,12 @@ if (defaultToCharacter === true) {
     check1 = "";
     check2 = "checked";
 }
-var whisperSpeakerID = game.user.character.id;
-if (canvas.tokens.controlled[0] !== undefined) {
+
+var whisperSpeakerID = "";
+if(game.user.character !== null && game.user.character !== undefined){
+whisperSpeakerID = game.user.character.id
+}
+if (canvas.tokens.controlled[0] !== undefined && canvas.tokens.controlled[0].actor !== null) {
     whisperSpeakerID = canvas.tokens.controlled[0].actor.id;
 }
 if (activePlayersOnly === true) {
