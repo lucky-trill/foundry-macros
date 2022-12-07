@@ -14,8 +14,8 @@ if (defaultToCharacter === true) {
 }
 
 var whisperSpeakerID = "";
-if(game.user.character !== null && game.user.character !== undefined){
-whisperSpeakerID = game.user.character.id
+if (game.user.character !== null && game.user.character !== undefined) {
+    whisperSpeakerID = game.user.character.id
 }
 if (canvas.tokens.controlled[0] !== undefined && canvas.tokens.controlled[0].actor !== null) {
     whisperSpeakerID = canvas.tokens.controlled[0].actor.id;
@@ -95,7 +95,7 @@ function createWhisper(html) {
             integer = integer + 1;
         }
     });
-    var finalWhisperSpeaker = $("#characters").val()
+    var finalWhisperSpeaker = $("#characters").val();
     var whisperMessage = html.find('[name="whisperText"]')[0].value;
     if (whisperID.length < 1 && warnIfNoTargets === true) {
         ui.notifications.warn("You did not select a target for the whisper, so it did not send.");
@@ -103,9 +103,9 @@ function createWhisper(html) {
         if ($('#speaker2:checked').length > 0) {
             ChatMessage.create({
                 user: game.user.id,
-                speaker: {
-                    actor: finalWhisperSpeaker
-                },
+                speaker: ChatMessage.getSpeaker({
+                    actor: game.actors.get(finalWhisperSpeaker)
+                }),
                 content: whisperMessage,
                 whisper: whisperID
             });
