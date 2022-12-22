@@ -1,7 +1,7 @@
 var defaultCharacter = "Eiriel Waywick"; //Default character to roll as. If left blank or deleted, dialog will default to character bound in your User Configuration.
 var defaultItem = "Rapid Silence"; //Default item to roll.
 var defaultAttacks = [5]; //Array of numbers of attacks per target.
-var defaultTargets = 1; //Default number of targets. If you are actively targeting a creature when you
+var defaultTargets = 1; //Default number of targets. If you are actively targeting a creature when you call the dialog, this will be ignored.
 var defaultAC = "unknown"; //Can be: "unknown" to default to not checking AC; "targets" to default to checking target AC; or any numerical value to default to checking against that specific AC value.
 var defaultAdvantage = [0]; //Array of numbers of attacks to make at advantage per target.
 var defaultDisadvantage = [0]; //Array of numbers of attacks to make at disadvantage per target.
