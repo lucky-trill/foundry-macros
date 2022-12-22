@@ -1,0 +1,230 @@
+var defaultCharacter = "Eiriel Waywick"; //Default character to roll as. If left blank or deleted, dialog will default to character bound in your User Configuration.
+var defaultItem = "Rapid Silence"; //Default item to roll.
+var defaultAttacks = [5]; //Array of numbers of attacks per target.
+var defaultTargets = 1; //Default number of targets. If you are actively targeting a creature when you
+var defaultAC = "unknown"; //Can be: "unknown" to default to not checking AC; "targets" to default to checking target AC; or any numerical value to default to checking against that specific AC value.
+var defaultAdvantage = [0]; //Array of numbers of attacks to make at advantage per target.
+var defaultDisadvantage = [0]; //Array of numbers of attacks to make at disadvantage per target.
+
+var tableSize = "18px"; //Height and width of target's token image for table of all attacks.
+var totalSize = "14px"; //Height and width of target's token image for flavor text of total damage.
+
+var maxAC = 30; //Max AC to use for breaking up color gradient.
+var critMissColor = "#ff0000"; //Color to use for critical misses.
+var critHitColor = "#4b0082"; //Color to use for critical hits.
+var gradientColors = ["#ffa500", "#ffff00", "#008000", "#0000ff"] //Array of colors to use for color coding non-critical totals.
+
+
+
+
+if(Array.from(game.user.targets).length > 0){
+	defaultTargets = Array.from(game.user.targets).length;
+	defaultAC = "targets";
+var newDefaultAttacks = "";
+for (let i = 0; i < Array.from(game.user.targets).length; i++){
+if(i !== 0){
+newDefaultAttacks += ","+Math.floor(defaultAttacks/Array.from(game.user.targets).length);
+}else{
+newDefaultAttacks += Math.ceil(defaultAttacks/Array.from(game.user.targets).length);
+}
+}
+defaultAttacks = newDefaultAttacks;
+}
+
+function toTitleCase(str) {
+    return str.replace(
+        /\w\S*/g,
+        function(txt) {
+            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        }
+    );
+}
+
+async function massAttack(html) {
+
+var selectedCharacter = game.actors.get(html.find("select#characters").val());
+var selectedAttacks = html.find("input#number").val().replaceAll(" ", "").split(",");
+var selectedTargets = html.find("input#targets").val();
+var selectedAC = html.find("select#armorClass").val();
+var selectedAdvantage = html.find("input#advantage").val().replaceAll(" ", "").split(",");
+var selectedDisadvantage = html.find("input#disadvantage").val().replaceAll(" ", "").split(",");
+
+var selectedItem = html.find("select#items").val();
+
+var finalItem = selectedCharacter.items.get(selectedItem);
+
+var finalDamageType = "";
+for (let i = 0; i < finalItem.system.damage.parts.length; i++){
+	if(i > 0){
+		finalDamageType += " & ";
+	}
+	finalDamageType += toTitleCase(finalItem.system.damage.parts[i][1]);
+}
+
+if(selectedAttacks.length < selectedTargets){
+	for(var i = 0; i < (selectedTargets - selectedAttacks.length); i++) {
+    	selectedAttacks.push(1);
+	}	
+}
+if(selectedAdvantage.length < selectedTargets){
+	for(var i = 0; i < (selectedTargets - selectedAdvantage.length); i++) {
+    	selectedAdvantage.push(0);
+	}
+}
+if(selectedDisadvantage.length < selectedTargets){
+	for(var i = 0; i < (selectedTargets - selectedDisadvantage.length); i++) {
+    	selectedDisadvantage.push(0);
+	}	
+}
+
+for (let c = 0; c < selectedTargets; c++){
+
+var rollResults = new Array();
+for (let i = 0; i < selectedAdvantage[c] && i < selectedAttacks[c]; i++) {
+var rollResult = await finalItem.rollAttack({advantage: true, fastForward: true, chatMessage: false});
+rollResults.push(rollResult);
+game.dice3d.showForRoll(rollResult);
+}
+for (let i = 0; i < selectedDisadvantage[c] && i < selectedAttacks[c]; i++) {
+var rollResult = await finalItem.rollAttack({disadvantage: true, fastForward: true, chatMessage: false});
+rollResults.push(rollResult);
+game.dice3d.showForRoll(rollResult);
+}
+for (let i = 0; i < (selectedAttacks[c] - selectedAdvantage[c] - selectedDisadvantage[c]); i++) {
+var rollResult = await finalItem.rollAttack({fastForward: true, chatMessage: false});
+rollResults.push(rollResult);
+game.dice3d.showForRoll(rollResult);
+}
+
+var damageResults = new Array();
+var boxColors = new Array();
+for (let i = 0; i < rollResults.length; i++) {
+var hitCheck = true;
+if(Array.from(game.user.targets)[c] !== undefined && selectedAC == "targets" && Array.from(game.user.targets)[c].actor.system.attributes.ac.value > rollResults[i].total){
+		hitCheck = false;
+}else if(selectedAC !== "targets" && selectedAC !== "unknown" && selectedAC > rollResults[i].total){
+		hitCheck = false;	
+}
+var criticalCheck = false;
+var boxColor = gradientColors[Math.ceil(rollResults[i].total/Math.ceil(maxAC/gradientColors.length))-1];
+if(rollResults[i].options.advantageMode == 1){
+	if(rollResults[i].terms[0].results[0].result >= rollResults[i].options.critical || rollResults[i].terms[0].results[1].result >= rollResults[i].options.critical){
+		criticalCheck = true;
+		boxColor = critHitColor;
+	}else if(rollResults[i].terms[0].results[0].result <= 1 && rollResults[i].terms[0].results[1].result <= 1){
+		hitCheck = false;
+		boxColor = critMissColor;
+	}
+}else if(rollResults[i].options.advantageMode == -1){
+		if(rollResults[i].terms[0].results[0].result >= rollResults[i].options.critical &&  rollResults[i].terms[0].results[1].result >= rollResults[i].options.critical){
+		criticalCheck = true;
+		boxColor = critHitColor;
+	}else if(rollResults[i].terms[0].results[0].result <= 1 || rollResults[i].terms[0].results[1].result <= 1){
+		hitCheck = false;
+		boxColor = critMissColor;
+	}
+}else if(rollResults[i].terms[0].results[0].result >= rollResults[i].options.critical){
+		criticalCheck = true;
+		boxColor = critHitColor;
+}else if(rollResults[i].terms[0].results[0].result <= 1){
+		hitCheck = false;
+		boxColor = critMissColor;
+}
+boxColors.push(boxColor);
+if(hitCheck == true){
+var rollResult = await finalItem.rollDamage({options: {critical: criticalCheck, fastForward: true, chatMessage: false}});
+damageResults.push(rollResult);
+game.dice3d.showForRoll(rollResult);
+}else{
+	damageResults.push("Miss");
+}
+}
+
+var tableRows = "";
+var totalDamage = 0;
+for (let i = 0; i < rollResults.length; i++) {
+	var damageResult = "<b>Miss</b>";
+	if(damageResults[i] !== "Miss"){
+		damageResult = "<i>"+damageResults[i]._formula+"</i> = <i>"+damageResults[i].result+"</i> = <b>"+damageResults[i].total+" "+finalDamageType+"</b>";
+		totalDamage += parseInt(damageResults[i].total);
+	}
+	tableRows += "<div style='border-width:1px 1px 0px 1px; border-style:solid; border-color:"+boxColors[i]+"; margin:4px auto 0px auto; line-height:200%; text-shadow:0px 0px 4px "+boxColors[i]+";'><i>"+rollResults[i]._formula+"</i> = <i>"+rollResults[i].result+"</i> = <b>"+rollResults[i].total+"</b></div><div style='border-width:0px 1px 1px 1px; border-style:solid; border-color:"+boxColors[i]+"; margin:0px auto 4px auto; line-height:200%; text-shadow:0px 0px 4px "+boxColors[i]+";'><td>"+damageResult+"</div>";
+}
+
+var targetImage = "";
+var targetTotalImage = "";
+if(Array.from(game.user.targets)[c] !== undefined && Array.from(game.user.targets)[c] !== null){
+	var targetName = "Unknown Creature";
+	if(Array.from(game.user.targets)[c].document.displayName == 30 || Array.from(game.user.targets)[c].document.displayName == 50) {
+		targetName = Array.from(game.user.targets)[c].document.name;
+	}
+	targetImage = " - <img src='"+Array.from(game.user.targets)[c].document.texture.src+"' style='width:"+tableSize+"; height:"+tableSize+"; border:0px; vertical-align:middle;' title='"+targetName+"'>";
+	targetTotalImage = " - <img src='"+Array.from(game.user.targets)[c].document.texture.src+"' style='width:"+totalSize+"; height:"+totalSize+"; border:0px; vertical-align:middle;' title='"+targetName+"'>";
+}
+	
+ChatMessage.create({
+	user: game.user._id,
+    speaker: ChatMessage.getSpeaker({actor: selectedCharacter}),
+    content: "<div style='text-align:center;'><h2><b>Target #"+parseInt(c+1)+targetImage+"</b></h2>"+tableRows+"</div>"
+});
+
+var finalTotal = await new Roll(""+totalDamage+"["+finalDamageType+"]").roll({async: true});
+await finalTotal.toMessage({user: game.user._id, speaker: ChatMessage.getSpeaker({actor: selectedCharacter}), flavor: "<h3 style='text-align:center;'>Total Damage - Target #"+parseInt(c+1)+targetTotalImage+"</h3>"});
+}
+}
+
+var allCharacters = game.actors;
+var characterOptions = "";
+var trimmedItems = "";
+allCharacters.forEach(character => {
+    if (character.permission > 2) {
+	var selected = "";
+	if(defaultCharacter == character.name){
+       	 selected = "selected";
+	}else if ((defaultCharacter == "" || defaultCharacter == null || defaultCharacter == undefined) && game.user.character !== null && game.user.character !== undefined && character.id == game.user.character.id) {
+        selected = "selected";
+    }
+        characterOptions += `<option value='${character.id}' ${selected}>${character.name}</option>`;
+		trimmedItems += `<option disabled>- ${character.name} -</option>`; 
+		var allItems = Array.from(character.items);
+for (let i = 0; i < allItems.length; i++) {
+  if(allItems[i].system.actionType == "mwak" || allItems[i].system.actionType == "msak" || allItems[i].system.actionType == "rwak" || allItems[i].system.actionType == "rsak"){
+	  if(allItems[i].system.damage.parts.length > 0){
+		  var selected2 = "";
+		if(defaultItem == allItems[i].name){
+       	 selected2 = "selected";
+		}
+		trimmedItems += `<option value='${allItems[i].id}' ${selected2}>${allItems[i].name}</option>`; 
+	  }
+  }
+}
+    }
+});
+var targetsSelect = "";
+var unknownSelect = "";
+if(defaultAC == "targets"){
+	targetSelect = "selected";
+}else if(defaultAC == "unknown"){
+	unknownSelect = "selected";
+}
+var acOptions = `<option value="targets" `+targetsSelect+`>Target(s)</option><option value="unknown" `+unknownSelect+`>Unknown</option>`;
+for (let i = 1; i <= maxAC; i++) {
+	var currentSelected = "";
+	if(parseInt(defaultAC) == i){
+		currentSelected = "selected";
+	}
+	acOptions += `<option value="`+i+`" `+currentSelected+`>`+i+`</option>`;
+}
+
+
+
+new Dialog({
+  title: "Mass Attack",
+  content: `<label for="characters" style="font-weight:bold; display:inline-block; width:38%; margin:4px 1%;">Attacking Character:</label><select name="characters" id="characters" style="width:58%; margin:4px 1%;">`+characterOptions+`</select><br><label for="items" style="font-weight:bold; display:inline-block; width:38%; margin:4px 1%;">Attack Item:</label><select name="items" id="items" style="width:58%; margin:4px 1%;">`+trimmedItems+`</select><br><label for="number" style="font-weight:bold; display:inline-block; width:38%; margin:4px 1%;">Number of Attacks:</label><input type="text" name="number" id="number" style="width:58%; margin:4px 1%;" value="`+defaultAttacks+`" placeholder="per target, seperate with commas"></select><br><label for="targets" style="font-weight:bold; display:inline-block; width:38%; margin:4px 1%;">Number of Targets:</label><input type="number" name="targets" id="targets" style="width:58%; margin:4px 1%;" value="`+defaultTargets+`" placeholder="numerical"></select><br><label for="armorClass" style="font-weight:bold; display:inline-block; width:38%; margin:4px 1%;">Armor Class:</label><select name="armorClass" id="armorClass" style="width:58%; margin:4px 1%;">`+acOptions+`</select><br><label for="advantage" style="font-weight:bold; display:inline-block; width:38%; margin:4px 1%;">Numb. at Advantage:</label><input type="text" name="advantage" id="advantage" style="width:58%; margin:4px 1%;" value="`+defaultAdvantage+`" placeholder="per target, seperate with commas"></select><br><label for="disadvantage" style="font-weight:bold; display:inline-block; width:38%; margin:4px 1%;">Numb. at Disadvantage:</label><input type="text" name="disadvantage" id="disadvantage" style="width:58%; margin:4px 1%;" value="`+defaultDisadvantage+`" placeholder="per target, seperate with commas"></select>`,
+  buttons: {
+    button1: {
+      label: "Roll Attacks & Damage",
+      callback: (html) => massAttack(html)
+    }
+  }
+}).render(true);
