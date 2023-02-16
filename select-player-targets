@@ -22,12 +22,14 @@ function selectTargets(html) {
         ui.notifications.info(selectedPlayer.name + " does not currently have any targets selected.");
     } else {
         canvas.tokens.releaseAll();
-        canvas.tokens.placeables.forEach(t => {
-            if (selectedPlayer.targets.ids.includes(t.id) === true) {
+        const tokens = canvas.tokens.placeables.map(t => t);
+        for (const t of tokens) {
+            if (selectedPlayer.targets.ids.includes(t.id) == true) {
+                console.log(t.id);
                 t.control({
                     releaseOthers: false
                 });
             }
-        });
+        }
     }
 }
