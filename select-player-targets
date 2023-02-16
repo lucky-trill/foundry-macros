@@ -1,0 +1,33 @@
+var playerDropdown = "";
+var userArray = Array.from(game.users);
+for (let i = 0; i < userArray.length; i++) {
+    playerDropdown += "<option value='" + userArray[i].id + "'>" + userArray[i].name + "</option>";
+}
+
+new Dialog({
+    title: "Select Player's Targets",
+    content: "<label for='players' style='font-weight:bold; width:38%; margin:4px 1%; display:inline-block;'>Select Player</label><select id='players' style='width:58%; margin:4px 1%; display:inline-block;'>" + playerDropdown + "</select>",
+    buttons: {
+        select: {
+            label: "Select Player's Targets",
+            callback: (html) => selectTargets(html)
+        }
+    }
+}).render(true);
+
+function selectTargets(html) {
+    var playerID = html.find("#players").val();
+    var selectedPlayer = game.users.get(playerID);
+    if (selectedPlayer.targets.size < 1) {
+        ui.notifications.info(selectedPlayer.name + " does not currently have any targets selected.");
+    } else {
+        canvas.tokens.releaseAll();
+        canvas.tokens.placeables.forEach(t => {
+            if (selectedPlayer.targets.ids.includes(t.id) === true) {
+                t.control({
+                    releaseOthers: false
+                });
+            }
+        });
+    }
+}
