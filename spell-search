@@ -1,11 +1,11 @@
 const packName = `world.spells`; // Location and name of compendium where spells are stored.
-const maxMassImport = 300; // Maximum number of results before the mass import button disappears. Setting it to 0 will cause the button to never appear; setting it to 1000+ will cause it to always appear.
-const maxMassDelete = 300; // Maximum number of results before the mass delete button disappears. Setting it to 0 will cause the button to never appear; setting it to 1000+ will cause it to always appear.
+const maxMassImport = 150; // Maximum number of results before the mass import button disappears. Setting it to 0 will cause the button to never appear; setting it to 1000+ will cause it to always appear.
+const maxMassDelete = 150; // Maximum number of results before the mass delete button disappears. Setting it to 0 will cause the button to never appear; setting it to 1000+ will cause it to always appear.
 const hideOptions = 3; // Minimum number of results before mass editing options are automatically compressed. If you would like them to always be compressed, set to 0.
 const useCookies = true; // If set to "true", your last search will be remembered via cookies. If set to "false", that feature is turned off.
-const spellbookFilter = true; // If set to "true", provides options related to Multiclass Spellbook Filter for 5e. If set to "false", those options do not appear. This does not impact the core ability to search for if a spell is on a class' spell list, which uses information stored in the Source field.
-const customSection = true; // If set to "true", provides options related to Custom Character Sheet Sections. If set to "false", those options do not appear.
-const itemMacros = true; // If set to "true", spells used from the search excute their Item Macro. If set to "false", spells used from the search execute the normal use function.
+const spellbookFilter = false; // If set to "true", provides options related to Multiclass Spellbook Filter for 5e. If set to "false", those options do not appear. This does not impact the core ability to search for if a spell is on a class' spell list, which uses information stored in the Source field.
+const customSection = false; // If set to "true", provides options related to Custom Character Sheet Sections. If set to "false", those options do not appear.
+const itemMacros = false; // If set to "true", spells used from the search excute their Item Macro. If set to "false", spells used from the search execute the normal use function.
 
 const ignorePhrase = `[NGA]`; // Phrase in source field that will cause an individual spell to ignored.
 const wotcBooks = new Array(`ai`, `aag`, `egw`, `ftd`, `ggr`, `idrotf`, `phb`, `scc`, `srd`, `tce`, `xge`); // Acronyms of WotC sources. Removing an acronym will cause it to be treated as a third-party source and excluded from searches of all WotC Sources.
