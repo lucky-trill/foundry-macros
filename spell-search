@@ -43,7 +43,7 @@ const damageOptions = `<option value="acid">Acid</option><option value="bludgeon
 const abilityOptions = `<option value="str">Strength</option><option value="dex">Dexterity</option><option value="con">Constitution</option><option value="int">Intelligence</option><option value="wis">Wisdom</option><option value="cha">Charisma</option>`; // Dropdown options for ability scores.
 
 const shortTimeout = 200; // Delay to ensure quick cast and prepared spell list update works correctly. Increase if you notice inaccuracies or errors. Decrease if you notice lag.
-const longTimeout = 15000; // Delay before quick cast spells are removed. Increase if you find yourself unable to finish using the spell for it disappears. Decrease if the spell is lingering too long.
+const longTimeout = 15000; // Delay before quick cast spells are removed. Increase if you find yourself unable to finish using the spell before it disappears. Decrease if the spell is lingering too long.
 
 // Font Awesome icons for various functions and spell preparation modes.
 
