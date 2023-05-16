@@ -1,0 +1,1402 @@
+const packName = `world.spells`; // Location and name of compendium where spells are stored.
+const maxMassImport = 300; // Maximum number of results before the mass import button disappears. Setting it to 0 will cause the button to never appear; setting it to 1000+ will cause it to always appear.
+const maxMassDelete = 300; // Maximum number of results before the mass delete button disappears. Setting it to 0 will cause the button to never appear; setting it to 1000+ will cause it to always appear.
+const hideOptions = 3; // Minimum number of results before mass editing options are automatically compressed. If you would like them to always be compressed, set to 0.
+const useCookies = true; // If set to "true", your last search will be remembered via cookies. If set to "false", that feature is turned off.
+const spellbookFilter = true; // If set to "true", provides options related to Multiclass Spellbook Filter for 5e. If set to "false", those options do not appear. This does not impact the core ability to search for if a spell is on a class' spell list, which uses information stored in the Source field.
+const customSection = true; // If set to "true", provides options related to Custom Character Sheet Sections. If set to "false", those options do not appear.
+const itemMacros = true; // If set to "true", spells used from the search excute their Item Macro. If set to "false", spells used from the search execute the normal use function.
+
+const ignorePhrase = `[NGA]`; // Phrase in source field that will cause an individual spell to ignored.
+const wotcBooks = new Array(`ai`, `aag`, `egw`, `ftd`, `ggr`, `idrotf`, `phb`, `scc`, `srd`, `tce`, `xge`); // Acronyms of WotC sources. Removing an acronym will cause it to be treated as a third-party source and excluded from searches of all WotC Sources.
+const wotcBookOptions = `<option value="ai">Acquisitions Incorporated (AI)</option><option value="aag">Astral Adventurer's Guide (AAG)</option><option value="egw">Explorer's Guide to Wildemount (EGW)</option><option value="ftd">Fizban's Treasury of Dragons (FTD)</option><option value="ggr">Guildmasters' Guide to Ravnica (GGR)</option><option value="idrotf">Icewind Dale: Rime of the Frostmaiden (IDRotF)</option><option value="phb">Player's Handbook (PHB)</option><option value="scc">Strixhaven: A Curriculum of Chaos (SCC)</option><option value="srd">System Reference Document (SRD)</option><option value="tce">Tasha's Cauldron of Everything (TCE)</option><option value="xge">Xanathar's Guide to Everthing (XGE)</option>`; // Dropdown options of WotC books.
+const thirdBookOptions = `<option disabled="disabled">----</option><option value="thirdparty">All Third-Party Publications</option><option disabled="disabled">----</option><option value="cofsa">Compendium of Forgotten Secrets: Awakening (CoFSA)</option><option value="ds">Dragonsworn (DS)</option><option value="kges">Kibbles' Generic Elemental Spells (KGES)</option><option disabled="disabled">----</option><option value="all">All Sources Regardless of Publisher Type</option>`; // Dropdown options of third-party or homebrew books.
+
+const largeMargin = `4px`; // Larger vertical margin.
+const smallMargin = `2px`; // Smaller vertical margin.
+const headerPadding = `0px 8px`; // Padding for headers.
+const checkboxSize = `height:17px; width:17px;`; // Height and width of checkboxes.
+const inclusionColor = `rgba(255, 255, 240, 0.8)`; // Color to show spell is included in mass import and edit or has finished processing updates.
+const exclusionColor = `var(--color-underline-header)`; // Color to show spell is exclused in mass import and edit or has not yet finished processing upda.tes
+const labelWeight = `bold`; // Font weight of labels.
+const boxBorder = `1px solid var(--color-border-dark-5)`; // Border for box around multi checkbox options.
+const iconSize = `font-size:14px; line-height: 28px;`; // Size of Font Awesome icons.
+const minWidth = `400px`; // Minimum size of all search dialogs.
+const monospace = `Courier New, monospace`; // Font family for level labels.
+const letterSpacing = `-2px`; // Letter spacing for level labels.
+
+const classOptions = `<option value="artificer">Artificer</option><option value="bard">Bard</option><option value="cleric">Cleric</option><option value="druid">Druid</option><option value="paladin">Paladin</option><option value="ranger">Ranger</option><option value="sorcerer">Sorcerer</option><option value="warlock">Warlock</option><option value="wizard">Wizard</option>`; // Dropdown options for classes.
+const classCheckboxes = `<span style="display:inline-block;"><input type="checkbox" id="artificer" name="classCheckboxes" value="artificer" style="${checkboxSize}"><label for="artificer" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Artificer</label></span><span style="display:inline-block;"><input type="checkbox" id="bard" name="classCheckboxes" value="bard" style="${checkboxSize}"><label for="bard" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Bard</label></span><span style="display:inline-block;"><input type="checkbox" id="cleric" name="classCheckboxes" value="cleric" style="${checkboxSize}"><label for="cleric" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Cleric</label></span><span style="display:inline-block;"><input type="checkbox" id="druid" name="classCheckboxes" value="druid" style="${checkboxSize}"><label for="druid" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Druid</label></span><span style="display:inline-block;"><input type="checkbox" id="paladin" name="classCheckboxes" value="paladin" style="${checkboxSize}"><label for="paladin" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Paladin</label></span><span style="display:inline-block;"><input type="checkbox" id="ranger" name="classCheckboxes" value="ranger" style="${checkboxSize}"><label for="ranger" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Ranger</label></span><span style="display:inline-block;"><input type="checkbox" id="sorcerer" name="classCheckboxes" value="sorcerer" style="${checkboxSize}"><label for="sorcerer" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Sorcerer</label></span><span style="display:inline-block;"><input type="checkbox" id="warlock" name="classCheckboxes" value="warlock" style="${checkboxSize}"><label for="warlock" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Warlock</label></span><span style="display:inline-block;"><input type="checkbox" id="wizard" name="classCheckboxes" value="wizard" style="${checkboxSize}"><label for="wizard" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Wizard</label></span>`; // Checkboxes for searching for multiple classes.
+const levelOptions = `<option value="0">0th Cantrip</option><option value="1">1st Level</option><option value="2">2nd Level</option><option value="3">3rd Level</option><option value="4">4th Level</option><option value="5">5th Level</option><option value="6">6th Level</option><option value="7">7th Level</option><option value="8">8th Level</option><option value="9">9th Level</option>`; // Dropdown options for levels.
+const levelCheckboxes = `<span style="display:inline-block;"><input type="checkbox" id="levelZero" name="levelCheckboxes" value="0" style="${checkboxSize}"><label for="levelZero" style="display:inline-block; vertical-align:top; margin:${largeMargin};">0th Cantrip</label></span><span style="display:inline-block;"><input type="checkbox" id="levelOne" name="levelCheckboxes" value="1" style="${checkboxSize}"><label for="levelOne" style="display:inline-block; vertical-align:top; margin:${largeMargin};">1st Level</label></span><span style="display:inline-block;"><input type="checkbox" id="levelTwo" name="levelCheckboxes" value="2" style="${checkboxSize}"><label for="levelTwo" style="display:inline-block; vertical-align:top; margin:${largeMargin};">2nd Level</label></span><br><span style="display:inline-block;"><input type="checkbox" id="levelThree" name="levelCheckboxes" value="3" style="${checkboxSize}"><label for="levelThree" style="display:inline-block; vertical-align:top; margin:${largeMargin};">3rd Level</label></span><span style="display:inline-block;"><input type="checkbox" id="levelFour" name="levelCheckboxes" value="4" style="${checkboxSize}"><label for="levelFour" style="display:inline-block; vertical-align:top; margin:${largeMargin};">4th Level</label></span><span style="display:inline-block;"><input type="checkbox" id="levelFive" name="levelCheckboxes" value="5" style="${checkboxSize}"><label for="levelFive" style="display:inline-block; vertical-align:top; margin:${largeMargin};">5th Level</label></span><span style="display:inline-block;"><input type="checkbox" id="levelSix" name="levelCheckboxes" value="6" style="${checkboxSize}"><label for="levelSix" style="display:inline-block; vertical-align:top; margin:${largeMargin};">6th Level</label></span><br><span style="display:inline-block;"><input type="checkbox" id="levelSeven" name="levelCheckboxes" value="7" style="${checkboxSize}"><label for="levelSeven" style="display:inline-block; vertical-align:top; margin:${largeMargin};">7th Level</label></span><span style="display:inline-block;"><input type="checkbox" id="levelEight" name="levelCheckboxes" value="8" style="${checkboxSize}"><label for="levelEight" style="display:inline-block; vertical-align:top; margin:${largeMargin};">8th Level</label></span><span style="display:inline-block;"><input type="checkbox" id="levelNine" name="levelCheckboxes" value="9" style="${checkboxSize}"><label for="levelNine" style="display:inline-block; vertical-align:top; margin:${largeMargin};">9th Level</label></span>`; // Checkboxes for searching for multiple levels.
+const schoolOptions = `<option value="abj">Abjuration</option><option value="con">Conjuration</option><option value="div">Divination</option><option value="enc">Enchantment</option><option value="evo">Evocation</option><option value="ill">Illusion</option><option value="nec">Necromancy</option><option value="trs">Transmutation</option>`; // Dropdown options for spell schools.
+const schoolCheckboxes = `<span style="display:inline-block;"><input type="checkbox" id="Abjuration" name="schoolCheckboxes" value="abj" style="${checkboxSize}"><label for="Abjuration" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Abjuration</label></span><span style="display:inline-block;"><input type="checkbox" id="Conjuration" name="schoolCheckboxes" value="con" style="${checkboxSize}"><label for="Conjuration" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Conjuration</label></span><span style="display:inline-block;"><input type="checkbox" id="Divination" name="schoolCheckboxes" value="div" style="${checkboxSize}"><label for="Divination" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Divination</label></span><br><span style="display:inline-block;"><input type="checkbox" id="Enchantment" name="schoolCheckboxes" value="enc" style="${checkboxSize}"><label for="Enchantment" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Enchantment</label></span><span style="display:inline-block;"><input type="checkbox" id="Evocation" name="schoolCheckboxes" value="evo" style="${checkboxSize}"><label for="Evocation" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Evocation</label></span><br><span style="display:inline-block;"><input type="checkbox" id="Illusion" name="schoolCheckboxes" value="ill" style="${checkboxSize}"><label for="Illusion" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Illusion</label></span><span style="display:inline-block;"><input type="checkbox" id="Necromancy" name="schoolCheckboxes" value="nec" style="${checkboxSize}"><label for="Necromancy" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Necromancy</label></span><span style="display:inline-block;"><input type="checkbox" id="Transmutation" name="schoolCheckboxes" value="trs" style="${checkboxSize}"><label for="Transmutation" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Transmutation</label></span>`; // Checkboxes for searching for multiple schools.
+
+const actionOptions = `<option value="action">Action</option><option value="bonus">Bonus Action</option><option value="reaction">Reaction</option><option value="minute">Minute</option><option value="hour">Hour</option>`; // Dropdown options for casting times.
+const actionCheckboxes = `<span style="display:inline-block;"><input type="checkbox" id="action" name="actionCheckboxes" value="action" style="${checkboxSize}"><label for="action" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Action</label></span><span style="display:inline-block;"><input type="checkbox" id="bonusaction" name="actionCheckboxes" value="bonus" style="${checkboxSize}"><label for="bonusaction" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Bonus Action</label></span><span style="display:inline-block;"><input type="checkbox" id="reaction" name="actionCheckboxes" value="reaction" style="${checkboxSize}"><label for="reaction" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Reaction</label></span><br><span style="display:inline-block;"><input type="checkbox" id="minute" name="actionCheckboxes" value="minute" style="${checkboxSize}"><label for="minute" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Minute</label></span><span style="display:inline-block;"><input type="checkbox" id="hour" name="actionCheckboxes" value="hour" style="${checkboxSize}"><label for="hour" style="display:inline-block; vertical-align:top; margin:${largeMargin};">Hour</label></span>`; // Checkboxes for searching for multiple casting times.
+const durationOptions = `<option value="inst">Instantaneous</option><option value="turn">Turns</option><option value="round">Rounds</option><option value="minute">Minutes</option><option value="hour">Hours</option><option value="day">Days</option><option value="month">Months</option><option value="year">Year</option><option value="perm">Permanent</option><option value="spec">Special</option>`; // Dropdown options for spell durations.
+const targetOptions = `<option value="ally">Ally</option><option value="cone">Cone</option><option value="creature">Creature</option><option value="cube">Cube</option><option value="cylinder">Cylinder</option><option value="enemy">Enemy</option><option value="line">Line</option><option value="none">None</option><option value="object">Object</option><option value="radius">Radius</option><option value="self">Self</option><option value="space">Space</option><option value="sphere">Sphere</option><option value="square">Square</option><option value="wall">Wall</option>`; // Dropdown options for spell targets.
+const rangeOptions = `<option value="none">None</option><option value="self">Self</option><option value="touch">Touch</option><option value="special">Special</option><option value="any">Any</option><option value="ft">Feet</option><option value="mi">Miles</option>`; // Dropdown options for ranges.
+const rangeOrder = new Array(null, undefined, ``, `none`, `any`, `spec`, `self`, `touch`, `ft`, `m`, `km`, `mi`); // Order for comparing range units.
+const typeOptions = `<option value="mwak">Melee Weapon Attack</option><option value="rwak">Ranged Weapon Attack</option><option value="msak">Melee Spell Attack</option><option value="rsak">Ranged Spell Attack</option><option value="save">Saving Throw</option><option value="summon">Summoning</option><option value="heal">Healing</option><option value="abil">Ability Check</option><option value="util">Utility</option><option value="other">Other</option>`; // Dropdown options for types of actions.
+const damageOptions = `<option value="acid">Acid</option><option value="bludgeoning">Bludgeoning</option><option value="cold">Cold</option><option value="fire">Fire</option><option value="force">Force</option><option value="lightning">Lightning</option><option value="necrotic">Necrotic</option><option value="piercing">Piercing</option><option value="poison">Poison</option><option value="psychic">Psychic</option><option value="radiant">Radiant</option><option value="slashing">Slashing</option><option value="thunder">Thunder</option><option value="midi-none">No Damage</option><option value="healing">Healing</option><option value="temphp">Healing (Temporary)</option>`; // Dropdown options for types of damage.
+const abilityOptions = `<option value="str">Strength</option><option value="dex">Dexterity</option><option value="con">Constitution</option><option value="int">Intelligence</option><option value="wis">Wisdom</option><option value="cha">Charisma</option>`; // Dropdown options for ability scores.
+
+const shortTimeout = 200; // Delay to ensure quick cast and prepared spell list update works correctly. Increase if you notice inaccuracies or errors. Decrease if you notice lag.
+const longTimeout = 15000; // Delay before quick cast spells are removed. Increase if you find yourself unable to finish using the spell for it disappears. Decrease if the spell is lingering too long.
+
+// Font Awesome icons for various functions and spell preparation modes.
+
+const toggleOn = `toggle-on`;
+const toggleOff = `toggle-off`;
+const categoryToggle = `arrow-down-arrow-up`;
+const importIcon = `square-plus`;
+const successIcon = `thumbs-up`;
+const deletedIcon = `trash`;
+
+const unpreparedIcon = `books`;
+const preparedIcon = `book-sparkles`;
+const innateIcon = `droplet`;
+const pactIcon = `eye-evil`;
+const alwaysIcon = `bookmark`;
+const atwillIcon = `hand-holding-magic`;
+
+
+
+
+// Do not edit below this line unless you really know what you're doing.
+
+const macroName = this.name;
+
+function toTitleCase(str) {
+  return str.replace(
+    /\w\S*/g,
+    (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(),
+      );
+    }
+    
+    const getCookieValue = (name) => (
+      document.cookie.match(`(^|;)\\s*${name}\\s*=\\s*([^;]+)`)?.pop() || ''
+        );
+      
+      let searchCharacter;
+      let searchLocation;
+      let searchNameUnclean;
+      let searchName;
+      let searchNameArray = new Array();
+      let searchDescUnclean;
+      let searchDesc;
+      let searchDescArray = new Array();
+      let searchClass;
+      let searchClassBoxes = new Array();
+      let searchLevel;
+      let searchLevelBoxes = new Array();
+      let searchSchool;
+      let searchSchoolBoxes = new Array();
+      let searchAction;
+      let searchActionBoxes = new Array();
+      let searchDuration;
+      let searchTarget;
+      let searchType;
+      let searchRangeLogic;
+      let searchRangeNum;
+      let searchRange;
+      let searchDamage;
+      let searchSave;
+      let searchConcen;
+      let searchRitual;
+      let searchVerbal;
+      let searchSomatic;
+      let searchMaterial;
+      let searchSMUnclean;
+      let searchSource;
+      let searchSort;
+      async function spellSearch(html) {
+        if (html.length <= 1) {
+          searchCharacter = html.find('select#characters').val();
+          searchLocation = html.find('select#location').val();
+          searchNameUnclean = html.find('input#nameField').val();
+          searchName = searchNameUnclean.replaceAll('] ', ']').replaceAll(' [', '[').replaceAll('[OR]', '').replaceAll('[EX]', '').replaceAll('[CS]', '').replaceAll('`', '"');
+          searchNameArray = new Array();
+          if (searchName.replaceAll('""', '" "').includes('" "') == true) { searchNameArray = searchName.replaceAll('""', '" "').split('" "'); }
+          searchDescUnclean = html.find('input#descField').val();
+          searchDesc = searchDescUnclean.replaceAll('] ', ']').replaceAll(' [', '[').replaceAll('[OR]', '').replaceAll('[EX]', '').replaceAll('[CS]', '').replaceAll('`', '"');
+          searchDescArray = new Array();
+          if (searchDesc.replaceAll('""', '" "').includes('" "') == true) { searchDescArray = searchDesc.replaceAll('""', '" "').split('" "'); }
+          searchClass = html.find('select#classes').val();
+          const checkedClassBoxes = document.querySelectorAll('input[name=classCheckboxes]:checked');
+          searchClassBoxes = new Array();
+          if (checkedClassBoxes !== null && checkedClassBoxes !== undefined) {
+            for (let l = 0; l < checkedClassBoxes.length; l++) {
+              searchClassBoxes[l] = checkedClassBoxes[l].value;
+            }
+          }
+          searchLevel = html.find('select#levels').val();
+          const checkedLevelBoxes = document.querySelectorAll('input[name=levelCheckboxes]:checked');
+          searchLevelBoxes = new Array();
+          if (checkedLevelBoxes !== null && checkedLevelBoxes !== undefined) {
+            for (let l = 0; l < checkedLevelBoxes.length; l++) {
+              searchLevelBoxes[l] = checkedLevelBoxes[l].value;
+            }
+          }
+          searchSchool = html.find('select#schools').val();
+          const checkedSchoolBoxes = document.querySelectorAll('input[name=schoolCheckboxes]:checked');
+          searchSchoolBoxes = new Array();
+          if (checkedSchoolBoxes !== null && checkedSchoolBoxes !== undefined) {
+            for (let l = 0; l < checkedSchoolBoxes.length; l++) {
+              searchSchoolBoxes[l] = checkedSchoolBoxes[l].value;
+            }
+          }
+          searchAction = html.find('select#actions').val();
+          const checkedActionBoxes = document.querySelectorAll('input[name=actionCheckboxes]:checked');
+          searchActionBoxes = new Array();
+          if (checkedActionBoxes !== null && checkedActionBoxes !== undefined) {
+            for (let l = 0; l < checkedActionBoxes.length; l++) {
+              searchActionBoxes[l] = checkedActionBoxes[l].value;
+            }
+          }
+          searchDuration = html.find('select#duration').val();
+          searchTarget = html.find('select#targets').val();
+          searchType = html.find('select#type').val();
+          searchRangeLogic = html.find('select#rangeLogic').val();
+          searchRangeNum = html.find('input#rangeField').val();
+          searchRange = html.find('select#range').val();
+          searchDamage = html.find('select#damage').val();
+          searchSave = html.find('select#saves').val();
+          searchConcen = html.find('select#concen').val();
+          searchRitual = html.find('select#ritual').val();
+          searchVerbal = html.find('select#verbal').val();
+          searchSomatic = html.find('select#somatic').val();
+          searchMaterial = html.find('select#material').val();
+          searchSMUnclean = html.find('input#matField').val();
+          searchSource = html.find('select#sources').val();
+          searchSort = html.find('select#sort').val();
+          
+          if (useCookies == true) {
+            document.cookie = `spellSearchCharacter=${searchCharacter}`;
+            document.cookie = `spellSearchLocation=${searchLocation}`;
+            document.cookie = `spellSearchName=${searchNameUnclean}`;
+            document.cookie = `spellSearchDesc=${searchDescUnclean}`;
+            document.cookie = `spellSearchClass=${searchClass}`;
+            document.cookie = `spellSearchClassBoxes=${searchClassBoxes}`;
+            document.cookie = `spellSearchLevel=${searchLevel}`;
+            document.cookie = `spellSearchLevelBoxes=${searchLevelBoxes}`;
+            document.cookie = `spellSearchSchool=${searchSchool}`;
+            document.cookie = `spellSearchSchoolBoxes=${searchSchoolBoxes}`;
+            document.cookie = `spellSearchAction=${searchAction}`;
+            document.cookie = `spellSearchActionBoxes=${searchActionBoxes}`;
+            document.cookie = `spellSearchDuration=${searchDuration}`;
+            document.cookie = `spellSearchRangeLogic=${searchRangeLogic}`;
+            document.cookie = `spellSearchRangeNum=${searchRangeNum}`;
+            document.cookie = `spellSearchRange=${searchRange}`;
+            document.cookie = `spellSearchTarget=${searchTarget}`;
+            document.cookie = `spellSearchType=${searchType}`;
+            document.cookie = `spellSearchDamage=${searchDamage}`;
+            document.cookie = `spellSearchSave=${searchSave}`;
+            document.cookie = `spellSearchConcen=${searchConcen}`;
+            document.cookie = `spellSearchRitual=${searchRitual}`;
+            document.cookie = `spellSearchVerbal=${searchVerbal}`;
+            document.cookie = `spellSearchSomatic=${searchSomatic}`;
+            document.cookie = `spellSearchMaterial=${searchMaterial}`;
+            document.cookie = `spellSearchSM=${searchSMUnclean}`;
+            document.cookie = `spellSearchSource=${searchSource}`;
+            document.cookie = `spellSearchSort=${searchSort}`;
+          }
+        } else {
+          if(args.length < 24){
+            for (let i = 0; i < (24 - args.length + 1); i++) {
+              args.push("");
+            }
+          }
+          searchCharacter = args[0].replaceAll('0', '').replaceAll('character', '');
+          if(searchCharacter == "" && game.canvas.tokens.controlled[0] !== undefined){
+            searchCharacter = game.canvas.tokens.controlled[0].actor.id;
+          }else if(searchCharacter == "" && game.user.character !== null && game.user.character !== undefined){
+            searchCharacter = game.user.character.id;
+          }
+          searchLocation = 'compendium';
+          if(args[1].replaceAll('0', '').replaceAll('location', '') == 'character' || args[1].replaceAll('0', '').replaceAll('location', '') == 'sheet'){
+            searchLocation = 'sheet';
+          }
+          searchNameUnclean = args[2].replaceAll('0', '').replaceAll('name', '');
+          searchName = searchNameUnclean.replaceAll('] ', ']').replaceAll(' [', '[').replaceAll('[OR]', '').replaceAll('[EX]', '').replaceAll('[CS]', '').replaceAll('`', '"');
+          searchNameArray = new Array();
+          searchDescUnclean = args[3].replaceAll('0', '').replaceAll('desc', '');
+          searchDesc = searchDescUnclean.replaceAll('] ', ']').replaceAll(' [', '[').replaceAll('[OR]', '').replaceAll('[EX]', '').replaceAll('[CS]', '').replaceAll('`', '"');
+          searchDescArray = new Array();
+          searchClass = 'multi';
+          searchClassBoxes = args[4].toLowerCase().replaceAll('0', '').replaceAll('class', '').split('/');
+          if (searchClassBoxes.length <= 1) {
+            searchClass = searchClassBoxes[0];
+          }
+          searchLevel = 'multi';
+          searchLevelBoxes = args[5].toLowerCase().replaceAll('level', '').split('/');
+          if (searchLevelBoxes.length <= 1) {
+            searchLevel = searchLevelBoxes[0];
+          }
+          searchSchool = 'multi';
+          searchSchoolBoxes = args[6].toLowerCase().replaceAll('0', '').replaceAll('school', '').split('/');
+          if (searchSchoolBoxes.length <= 1) {
+            searchSchool = searchSchoolBoxes[0];
+          }
+          searchAction = 'multi';
+          searchActionBoxes = args[7].toLowerCase().replaceAll('0', '').replaceAll('cast', '').split('/');
+          if (searchActionBoxes.length <= 1) {
+            searchAction = searchActionBoxes[0];
+          }
+          searchDuration = args[8].toLowerCase().replaceAll('0', '').replaceAll('duration', '');
+          searchTarget = args[9].toLowerCase().replaceAll('0', '').replaceAll('target', '');
+          searchType = args[10].toLowerCase().replaceAll('0', '').replaceAll('type', '');
+          searchRangeLogic = args[11].toLowerCase().replaceAll('0', '').replaceAll('logic', 'equal');
+          searchRangeNum = args[12].toLowerCase().replaceAll('0', '').replaceAll('number', '');
+          searchRange = args[13].toLowerCase().replaceAll('0', '').replaceAll('range', '');
+          searchDamage = args[14].toLowerCase().replaceAll('0', '').replaceAll('damage', '');
+          searchSave = args[15].toLowerCase().replaceAll('0', '').replaceAll('save', '');
+          searchConcen = args[16].toLowerCase().replaceAll('0', '').replaceAll('concen', '');
+          searchRitual = args[17].toLowerCase().replaceAll('0', '').replaceAll('ritual', '');
+          searchVerbal = args[18].toLowerCase().replaceAll('0', '').replaceAll('verbal', '');
+          searchSomatic = args[19].toLowerCase().replaceAll('0', '').replaceAll('somatic', '');
+          searchMaterial = args[20].toLowerCase().replaceAll('0', '').replaceAll('material', '');
+          searchSMUnclean = args[21].replaceAll('0', '').replaceAll('special', '');
+          searchSource = args[22].toLowerCase().replaceAll('0', '').replaceAll('source', '');
+          searchSort = args[23].toLowerCase().replaceAll('0', '').replaceAll('sort', '');
+        }
+        
+        const searchSM = searchSMUnclean.replaceAll('] ', ']').replaceAll(' [', '[').replaceAll('[OR]', '').replaceAll('[EX]', '').replaceAll('[CS]', '').replaceAll('`', '"');
+        let searchSMArray = new Array();
+        if (searchSM.replaceAll('""', '" "').includes('" "') == true) { searchSMArray = searchSM.replaceAll('""', '" "').split('" "'); }
+        
+        let specifiedCharacter = 'No Character';
+        if (searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== '') {
+          specifiedCharacter = game.actors.get(searchCharacter).name;
+        }
+        let itemArray;
+        let pack = game.packs.get(packName);
+        if (searchLocation == 'compendium' || searchCharacter == null || searchCharacter == undefined || searchCharacter == '') {
+          const index = pack.index ?? (await pack.getIndex());
+          itemArray = [];
+          const itemID = index.forEach((element) => itemArray.push(element._id));
+        } else {
+          itemArray = game.actors.get(searchCharacter).items.contents.filter((item) => item.type == 'spell');
+        }
+        let newTableArray = {};
+        let newTableContents = '';
+        let count = 0;
+        let prepSuccess = 'none';
+        const startTime = new Date();
+        let innerItem;
+        for (let i = 0; i < itemArray.length; i++) {
+          if (i === 10) {
+            const endTime = new Date();
+            const timeDiff = (((endTime - startTime) / 1000) * (itemArray.length / 10)).toFixed(1);
+            ui.notifications.info(`Spell search has initiated. Please give it roughly ${timeDiff} seconds to complete.`);
+          }
+          if (searchLocation == 'compendium' ||  searchCharacter == null || searchCharacter == undefined || searchCharacter == '') {
+            innerItem = await pack.getDocument(itemArray[i]);
+          } else {
+            innerItem = itemArray[i];
+            if(innerItem.system.preparation.mode == "prepared"){
+              prepSuccess = 'block';
+            }
+          }
+          if(spellbookFilter === true && innerItem.flags['spell-class-filter-for-5e'] == undefined){
+            await innerItem.setFlag('spell-class-filter-for-5e', 'parentClass', '');
+          }
+          if(customSection === true && innerItem.flags['custom-character-sheet-sections'] == undefined){
+            await innerItem.setFlag('custom-character-sheet-sections', 'sectionName', '');
+          }
+          if (innerItem.name !== '#[CF_tempEntity]' && innerItem.system.source.toLowerCase().includes(ignorePhrase.toLowerCase()) === false) {
+            const lowerName = innerItem.name.toLowerCase().replaceAll("'", '').replaceAll('-', '').replaceAll('/', '')
+              .replaceAll(' ', '');
+            let nameCheck = false;
+            let descCheck = false;
+            let classCheck = false;
+            let levelCheck = false;
+            let schoolCheck = false;
+            let actionCheck = false;
+            let durationCheck = false;
+            let rangeCheck = false;
+            let targetCheck = false;
+            let typeCheck = false;
+            let damageCheck = false;
+            let saveCheck = false;
+            let concenCheck = true;
+            let ritualCheck = false;
+            let verbalCheck = false;
+            let somaticCheck = false;
+            let materialCheck = false;
+            let smCheck = false;
+            let sourceCheck = false;
+            if (searchNameArray.length > 1) {
+              let termCount = 0;
+              for (let s = 0; s < searchNameArray.length; s++) {
+                let currentSearchTerm = searchNameArray[s].replaceAll('"', '');
+                let innerItemName = innerItem.name;
+                if (searchNameUnclean.includes('[CS]') == false) {
+                  currentSearchTerm = currentSearchTerm.toLowerCase();
+                  innerItemName = innerItemName.toLowerCase();
+                }
+                if (innerItemName.includes(currentSearchTerm) == true) {
+                  termCount += 1;
+                }
+              }
+              if (searchNameUnclean.includes('[EX]') == true) {
+                if (termCount <= 0) {
+                  nameCheck = true;
+                }
+              } else if (searchNameUnclean.includes('[OR]') == true && termCount >= 1) {
+                nameCheck = true;
+              } else if (termCount >= searchNameArray.length) {
+                nameCheck = true;
+              }
+            } else if (searchNameUnclean.includes('[EX]') == true) {
+              let currentSearchTerm = searchName;
+              let innerItemName = innerItem.name;
+              if (searchNameUnclean.includes('[CS]') == false) {
+                currentSearchTerm = currentSearchTerm.toLowerCase();
+                innerItemName = innerItemName.toLowerCase();
+              }
+              if (innerItemName.includes(currentSearchTerm) == false) {
+                nameCheck = true;
+              }
+            } else if (searchName == '' || searchNameUnclean.includes('[CS]') == false && innerItem.name.toLowerCase().includes(searchName.replace('"', '').toLowerCase()) == true) {
+              nameCheck = true;
+            } else if (innerItem.name.includes(searchName.replaceAll('"', '')) == true) {
+              nameCheck = true;
+            }
+            if (searchDescArray.length > 1) {
+              let termCount = 0;
+              for (let s = 0; s < searchDescArray.length; s++) {
+                let currentSearchTerm = searchDescArray[s].replaceAll('"', '');
+                let innerItemDesc = innerItem.system.description.value;
+                if (searchDescUnclean.includes('[CS]') == false) {
+                  currentSearchTerm = currentSearchTerm.toLowerCase();
+                  innerItemDesc = innerItemDesc.toLowerCase();
+                }
+                if (innerItemDesc.includes(currentSearchTerm) == true) {
+                  termCount += 1;
+                }
+              }
+              if (searchDescUnclean.includes('[EX]') == true) {
+                if (termCount <= 0) {
+                  descCheck = true;
+                }
+              } else if (searchDescUnclean.includes('[OR]') == true && termCount >= 1) {
+                descCheck = true;
+              } else if (termCount >= searchDescArray.length) {
+                descCheck = true;
+              }
+            } else if (searchDescUnclean.includes('[EX]') == true) {
+              let currentSearchTerm = searchDesc;
+              let innerItemDesc = innerItem.system.description.value;
+              if (searchDescUnclean.includes('[CS]') == false) {
+                currentSearchTerm = currentSearchTerm.toLowerCase();
+                innerItemDesc = innerItemDesc.toLowerCase();
+              }
+              if (innerItemDesc.includes(currentSearchTerm) == false) {
+                descCheck = true;
+              }
+            } else if (searchDesc == '' || searchDescUnclean.includes('[CS]') == false && innerItem.system.description.value.toLowerCase().includes(searchDesc.replace('"', '').toLowerCase()) == true) {
+              descCheck = true;
+            } else if (innerItem.system.description.value.includes(searchDesc.replaceAll('"', '')) == true) {
+              descCheck = true;
+            }
+            if (searchClass == 'multi' && searchClassBoxes.length > 1) {
+              for (let l = 0; l < searchClassBoxes.length; l++) {
+                if (innerItem.system.source !== '' && innerItem.system.source.toLowerCase().includes(searchClassBoxes[l]) == true) {
+                  classCheck = true;
+                }
+              }
+            } else if (searchClass == '' || innerItem.system.source !== '' && innerItem.system.source.toLowerCase().includes(searchClass.toLowerCase()) == true) {
+              classCheck = true;
+            }
+            if (searchLevel == 'multi' && searchLevelBoxes.length > 1) {
+              for (let l = 0; l < searchLevelBoxes.length; l++) {
+                if (searchLevelBoxes[l] == parseInt(innerItem.system.level)) {
+                  levelCheck = true;
+                }
+              }
+            } else if (searchLevel == '' || innerItem.system.level == searchLevel || searchLevel == 'multi' && parseInt(searchLevelBoxes[0]) == parseInt(innerItem.system.level)) {
+              levelCheck = true;
+            }
+            if (searchSchool == 'multi' && searchSchoolBoxes.length > 1) {
+              for (let l = 0; l < searchSchoolBoxes.length; l++) {
+                if (searchSchoolBoxes[l] == innerItem.system.school) {
+                  schoolCheck = true;
+                }
+              }
+            } else if (searchSchool == '' || innerItem.system.school == searchSchool || searchSchool == 'multi' && searchSchoolBoxes[0] == innerItem.system.school) {
+              schoolCheck = true;
+            }
+            if (searchRange == '') {
+              rangeCheck = true;
+            } else if (searchRange == 'all' && innerItem.system.range.units !== '' && innerItem.system.range.units !== null && innerItem.system.range.units !== undefined) {
+              rangeCheck = true;
+            } else if (searchRange == 'blank' && innerItem.system.range.units == '' || searchRange == 'blank' && innerItem.system.range.units == null || searchRange == 'blank' && innerItem.system.range.units == undefined) {
+              rangeCheck = true;
+            } else if (searchRangeLogic == 'equal' && innerItem.system.range.units == searchRange && innerItem.system.range.value == null && searchRangeNum == '' || searchRangeLogic == 'equal' && innerItem.system.range.units == searchRange && innerItem.system.range.value == undefined && searchRangeNum == '' || searchRangeLogic == 'equal' && innerItem.system.range.units == searchRange && innerItem.system.range.value == searchRangeNum) {
+              rangeCheck = true;
+            } else if (searchRangeLogic == 'greater') {
+              if (rangeOrder.indexOf(innerItem.system.range.units) > rangeOrder.indexOf(searchRange) || rangeOrder.indexOf(innerItem.system.range.units) >= rangeOrder.indexOf(searchRange) && innerItem.system.range.value > searchRangeNum || rangeOrder.indexOf(innerItem.system.range.units) >= rangeOrder.indexOf(searchRange) && innerItem.system.range.value == null || rangeOrder.indexOf(innerItem.system.range.units) >= rangeOrder.indexOf(searchRange) && innerItem.system.range.value == undefined) {
+                rangeCheck = true;
+              }
+            } else if (searchRangeLogic == 'less') {
+              if (rangeOrder.indexOf(innerItem.system.range.units) < rangeOrder.indexOf(searchRange) || rangeOrder.indexOf(innerItem.system.range.units) <= rangeOrder.indexOf(searchRange) && innerItem.system.range.value < searchRangeNum || rangeOrder.indexOf(innerItem.system.range.units) <= rangeOrder.indexOf(searchRange) && innerItem.system.range.value == null || rangeOrder.indexOf(innerItem.system.range.units) <= rangeOrder.indexOf(searchRange) && innerItem.system.range.value == undefined) {
+                rangeCheck = true;
+              }
+            }
+            if (searchTarget == '') {
+              targetCheck = true;
+            } else if (searchTarget == 'any' && innerItem.system.target.type !== '') {
+              targetCheck = true;
+            } else if (searchTarget == 'blank' && innerItem.system.target.type == '') {
+              targetCheck = true;
+            } else if (searchTarget == innerItem.system.target.type) {
+              targetCheck = true;
+            }
+            if (searchType == '') {
+              typeCheck = true;
+            } else if (searchType == 'any' && innerItem.system.actionType !== '') {
+              typeCheck = true;
+            } else if (searchType == 'blank' && innerItem.system.actionType == '') {
+              typeCheck = true;
+            } else if (searchType == innerItem.system.actionType) {
+              typeCheck = true;
+            }
+            if (searchDamage == '') {
+              damageCheck = true;
+            } else if (innerItem.system.damage.parts.length > 1 && searchDamage == 'multi') {
+              damageCheck = true;
+            } else if (innerItem.system.damage.parts.length > 0 && searchDamage == 'any') {
+              damageCheck = true;
+            } else if (innerItem.system.damage.parts.length <= 0 && searchDamage == 'blank') {
+              damageCheck = true;
+            } else if (innerItem.system.damage.parts.length > 0) {
+              for (let d = 0; d < innerItem.system.damage.parts.length; d++) {
+                if (innerItem.system.damage.parts[d][1] == searchDamage || searchDamage == 'none' && innerItem.system.damage.parts[d][1] == '') {
+                  damageCheck = true;
+                }
+              }
+            }
+            if (searchSave == '') {
+              saveCheck = true;
+            } else if (searchSave == 'any' && innerItem.system.save.ability !== undefined && innerItem.system.save.ability !== null && innerItem.system.save.ability !== "") {
+              saveCheck = true;
+            } else if (searchSave == 'blank' && (innerItem.system.save.ability == undefined || innerItem.system.save.ability == null || innerItem.system.save.ability == "")) {
+              saveCheck = true;
+            } else if (innerItem.system.save.ability == searchSave) {
+              saveCheck = true;
+            }
+            if (searchConcen == '' || innerItem.system.components.concentration.toString() == searchConcen) {
+              concenCheck = true;
+            }
+            if (searchRitual == '' || innerItem.system.components.ritual.toString() == searchRitual) {
+              ritualCheck = true;
+            }
+            if (searchVerbal == '' || innerItem.system.components.vocal.toString() == searchVerbal) {
+              verbalCheck = true;
+            }
+            if (searchSomatic == '' || innerItem.system.components.somatic.toString() == searchSomatic) {
+              somaticCheck = true;
+            }
+            if (searchMaterial == '' || innerItem.system.components.material.toString() == searchMaterial) {
+              materialCheck = true;
+            }
+            if (searchSMArray.length > 1) {
+              let termCount = 0;
+              for (let s = 0; s < searchSMArray.length; s++) {
+                let currentSearchTerm = searchSMArray[s].replaceAll('"', '');
+                let innerItemSM = innerItem.system.materials.value;
+                if (searchSMUnclean.includes('[CS]') == false) {
+                  currentSearchTerm = currentSearchTerm.toLowerCase();
+                  innerItemSM = innerItemSM.toLowerCase();
+                }
+                if (innerItemSM.includes(currentSearchTerm) == true) {
+                  termCount += 1;
+                }
+              }
+              if (searchSMUnclean.includes('[EX]') == true) {
+                if (termCount <= 0) {
+                  smCheck = true;
+                }
+              } else if (searchSMUnclean.includes('[OR]') == true && termCount >= 1) {
+                smCheck = true;
+              } else if (termCount >= searchSMArray.length) {
+                smCheck = true;
+              }
+            } else if (searchSMUnclean.includes('[EX]') == true) {
+              let currentSearchTerm = searchSM;
+              let innerItemSM = innerItem.system.materials.value;
+              if (searchSMUnclean.includes('[CS]') == false) {
+                currentSearchTerm = currentSearchTerm.toLowerCase();
+                innerItemSM = innerItemSM.toLowerCase();
+              }
+              if (innerItemSM.includes(currentSearchTerm) == false) {
+                smCheck = true;
+              }
+            } else if (searchSM == '' || searchSMUnclean.includes('[CS]') == false && innerItem.system.materials.value.toLowerCase().includes(searchSM.replace('"', '').toLowerCase()) == true) {
+              smCheck = true;
+            } else if (innerItem.system.materials.value.includes(searchSM.replace('"', '')) == true) {
+              smCheck = true;
+            }
+            if (searchSource === 'any' || searchSource === 'all') {
+              sourceCheck = true;
+            } else if (searchSource === '') {
+              for (let i = 0; i < wotcBooks.length; i++) {
+                if (innerItem.system.source.toLowerCase().includes(wotcBooks[i].toLowerCase()) === true) {
+                  sourceCheck = true;
+                }
+              }
+            } else if (searchSource === 'thirdparty') {
+              let sourceCount = 0;
+              for (let i = 0; i < wotcBooks.length; i++) {
+                if (innerItem.system.source.toLowerCase().includes(wotcBooks[i]) === false) {
+                  sourceCount += 1;
+                }
+              }
+              if (sourceCount >= wotcBooks.length) {
+                sourceCheck = true;
+              }
+            } else if (innerItem.system.source.toLowerCase().includes(searchSource) == true) {
+              sourceCheck = true;
+            }
+            if (searchAction == 'multi' && searchActionBoxes.length > 1) {
+              for (let l = 0; l < searchActionBoxes.length; l++) {
+                if (searchActionBoxes[l] == innerItem.system.activation.type) {
+                  actionCheck = true;
+                }
+              }
+            } else if (searchAction == '' || searchAction == innerItem.system.activation.type || searchAction == 'reaction' && innerItem.system.activation.type.includes(searchAction) == true) {
+              actionCheck = true;
+            }
+            if (searchDuration == '' || searchDuration == innerItem.system.duration.units) {
+              durationCheck = true;
+            }
+            if (nameCheck == true && descCheck == true && classCheck == true && levelCheck == true && schoolCheck == true && actionCheck == true && durationCheck == true && rangeCheck == true && targetCheck == true && typeCheck == true && damageCheck == true && saveCheck == true && concenCheck == true && ritualCheck == true && verbalCheck == true && somaticCheck == true && materialCheck == true && smCheck == true && sourceCheck == true) {
+              let otherSort = '';
+              if (searchSort == 'level') {
+                otherSort = `${innerItem.system.level}_`;
+              } else if (searchSort == 'school') {
+                otherSort = `${innerItem.system.school}_`;
+              }
+              let durAdd = '';
+              if (innerItem.system.duration.units == 'inst' || innerItem.system.duration.units == 'spec' || innerItem.system.duration.units == 'perm') {
+                durAdd = '.';
+              }
+              let durAdd2 = '';
+              if (innerItem.system.duration.value !== null && innerItem.system.duration.value !== undefined) {
+                durAdd2 = `${innerItem.system.duration.value} `;
+              }
+              const nameMath = Math.floor((38 - innerItem.name.length) / 2) - 1;
+              let nameSide = '┅';
+              for (let m = 0; m < nameMath; m++) {
+                nameSide = `${nameSide}┅`;
+              }
+              let leftClick = ``;
+              if( searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== ''){
+                leftClick = `&#10Left-Click to Cast ${innerItem.name.replaceAll("'", "\`")}`;
+              }
+              let itemOnclick = `onclick="if(game.packs.get('${packName}').get('${innerItem.id}') !== undefined){game.packs.get('${packName}').get('${innerItem.id}').sheet.render(true);}else{ui.notifications.warn('Spell compendium has been re-packed. Please run a new search.')}"`;
+              if(searchLocation == 'compendium' && searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== '' && itemMacros === true) {
+                itemOnclick = `onclick="if(game.packs.get('${packName}').get('${innerItem.id}') !== undefined){game.packs.get('${packName}').get('${innerItem.id}').sheet.render(true);}else{ui.notifications.warn('Spell compendium has been re-packed. Please run a new search.')}" oncontextmenu="if(game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`) !== undefined){if(game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`).hasMacro() === true){game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`).executeMacro();}else{game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`).use();}}else if(game.packs.get('${packName}').get('${innerItem.id}') !== undefined){let currentSpell = game.packs.get('${packName}').get('${innerItem.id}').toObject(); const currentPrep = document.querySelector('#prepModes').value; const currentMod = document.querySelector('#abMod').value; const currentCC  = document.querySelector('#compChange').value; const currentComp = document.querySelector('#components').value; const currentNum = document.querySelector('#useNum').value; const currentUses = document.querySelector('#uses').value; const currentAdept = document.querySelector('#elementalAdept').value; let successCount = 0; if(currentSpell.system.preparation.mode !== currentPrep){currentSpell.system.preparation.mode = currentPrep;} if(currentSpell.system.ability !== currentMod){currentSpell.system.ability = currentMod;}if(currentComp !== ''){let logic = false; if(currentCC == 'add'){logic = true;} if(currentComp == 'verbal'){currentSpell.system.components.vocal = logic;}else if(currentComp == 'somatic'){currentSpell.system.components.somatic = logic;}else if(currentComp == 'material'){currentSpell.system.components.material = logic;}else if(currentComp == 'ritual'){currentSpell.system.components.ritual = logic;}else if(currentComp == 'concentration'){currentSpell.system.components.concentration = logic;}} currentSpell.system.uses.value = currentNum; currentSpell.system.uses.max = currentNum; currentSpell.system.uses.per = currentUses;if(currentAdept !== '' && currentSpell.system.damage.parts.length > 0){for (let d = 0;  d < currentSpell.system.damage.parts.length; d++) {if(currentSpell.system.damage.parts[d][1] == currentAdept && currentSpell.system.damage.parts[d][0].includes('min2') == false){currentSpell.system.damage.parts[d][0] = currentSpell.system.damage.parts[d][0].replaceAll('d4', 'd4min2').replaceAll('d6', 'd6min2').replaceAll('d8', 'd8min2').replaceAll('d10', 'd10min2').replaceAll('d12', 'd12min2'); successCount += 1;}} if(successCount >= currentSpell.system.damage.parts.length){currentSpell.system.damage.versatile = currentSpell.system.damage.versatile.replaceAll('d4', 'd4min2').replaceAll('d6', 'd6min2').replaceAll('d8', 'd8min2').replaceAll('d10', 'd10min2').replaceAll('d12', 'd12min2'); currentSpell.system.scaling.formula = currentSpell.system.scaling.formula.replaceAll('d4', 'd4min2').replaceAll('d6', 'd6min2').replaceAll('d8', 'd8min2').replaceAll('d10', 'd10min2').replaceAll('d12', 'd12min2');}}if(${spellbookFilter} === true){currentSpell.flags['spell-class-filter-for-5e'].parentClass = document.querySelector('#spellbook').value;} if(${customSection} === true){currentSpell.flags['custom-character-sheet-sections'].sectionName = document.querySelector('#customSection').value;} game.actors.get('${searchCharacter}').createEmbeddedDocuments('Item', [currentSpell]); setTimeout(() => {if(game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`).hasMacro() === true){game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`).executeMacro();}else{game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`).use();}}, ${shortTimeout}); setTimeout(() => {game.actors.get('${searchCharacter}').deleteEmbeddedDocuments('Item', [game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`).id]);}, ${longTimeout});}else{ui.notifications.warn('Spell compendium has been re-packed. Please run a new search.')}"`;
+              }else if(searchLocation == 'compendium' && searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== '') {
+                itemOnclick = `onclick="if(game.packs.get('${packName}').get('${innerItem.id}') !== undefined){game.packs.get('${packName}').get('${innerItem.id}').sheet.render(true);}else{ui.notifications.warn('Spell compendium has been re-packed. Please run a new search.')}" oncontextmenu="if(game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`) !== undefined){game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`).use();}else if(game.packs.get('${packName}').get('${innerItem.id}') !== undefined){let currentSpell = game.packs.get('${packName}').get('${innerItem.id}').toObject(); const currentPrep = document.querySelector('#prepModes').value; const currentMod = document.querySelector('#abMod').value; const currentCC  = document.querySelector('#compChange').value; const currentComp = document.querySelector('#components').value; const currentNum = document.querySelector('#useNum').value; const currentUses = document.querySelector('#uses').value; const currentAdept = document.querySelector('#elementalAdept').value; let successCount = 0; if(currentSpell.system.preparation.mode !== currentPrep){currentSpell.system.preparation.mode = currentPrep;} if(currentSpell.system.ability !== currentMod){currentSpell.system.ability = currentMod;}if(currentComp !== ''){let logic = false; if(currentCC == 'add'){logic = true;} if(currentComp == 'verbal'){currentSpell.system.components.vocal = logic;}else if(currentComp == 'somatic'){currentSpell.system.components.somatic = logic;}else if(currentComp == 'material'){currentSpell.system.components.material = logic;}else if(currentComp == 'ritual'){currentSpell.system.components.ritual = logic;}else if(currentComp == 'concentration'){currentSpell.system.components.concentration = logic;}} currentSpell.system.uses.value = currentNum; currentSpell.system.uses.max = currentNum; currentSpell.system.uses.per = currentUses;if(currentAdept !== '' && currentSpell.system.damage.parts.length > 0){for (let d = 0;  d < currentSpell.system.damage.parts.length; d++) {if(currentSpell.system.damage.parts[d][1] == currentAdept && currentSpell.system.damage.parts[d][0].includes('min2') == false){currentSpell.system.damage.parts[d][0] = currentSpell.system.damage.parts[d][0].replaceAll('d4', 'd4min2').replaceAll('d6', 'd6min2').replaceAll('d8', 'd8min2').replaceAll('d10', 'd10min2').replaceAll('d12', 'd12min2'); successCount += 1;}} if(successCount >= currentSpell.system.damage.parts.length){currentSpell.system.damage.versatile = currentSpell.system.damage.versatile.replaceAll('d4', 'd4min2').replaceAll('d6', 'd6min2').replaceAll('d8', 'd8min2').replaceAll('d10', 'd10min2').replaceAll('d12', 'd12min2'); currentSpell.system.scaling.formula = currentSpell.system.scaling.formula.replaceAll('d4', 'd4min2').replaceAll('d6', 'd6min2').replaceAll('d8', 'd8min2').replaceAll('d10', 'd10min2').replaceAll('d12', 'd12min2');}}if(${spellbookFilter} === true){currentSpell.flags['spell-class-filter-for-5e'].parentClass = document.querySelector('#spellbook').value;} if(${customSection} === true){currentSpell.flags['custom-character-sheet-sections'].sectionName = document.querySelector('#customSection').value;} game.actors.get('${searchCharacter}').createEmbeddedDocuments('Item', [currentSpell]); setTimeout(() => {game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`).use();}, ${shortTimeout}); setTimeout(() => {game.actors.get('${searchCharacter}').deleteEmbeddedDocuments('Item', [game.actors.get('${searchCharacter}').items.getName(\`${innerItem.name}\`).id]);}, ${longTimeout});}else{ui.notifications.warn('Spell compendium has been re-packed. Please run a new search.')}"`;
+              }else if(searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== '' && itemMacros === true){
+                itemOnclick = `onclick="game.actors.get('${searchCharacter}').items.get('${innerItem.id}').sheet.render(true);" oncontextmenu="if(game.actors.get('${searchCharacter}').items.get('${innerItem.id}').hasMacro() === true){game.actors.get('${searchCharacter}').items.get('${innerItem.id}').executeMacro();}else{game.actors.get('${searchCharacter}').items.get('${innerItem.id}').use();}"`;
+              }else if(searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== ''){
+                itemOnclick = `onclick="game.actors.get('${searchCharacter}').items.get('${innerItem.id}').sheet.render(true);" oncontextmenu="game.actors.get('${searchCharacter}').items.get('${innerItem.id}').use();"`;
+              }
+              let singleImport = '';
+              let importWidth = '98%';
+              const extraButton = `<button style="width:8%; margin:${smallMargin} 1% ${smallMargin} 0%; ${iconSize}" class="fas fa-${toggleOn}" title="Toggle Inclusion in Mass Edits" value="${innerItem.id}" onclick="if(this.previousSibling.previousSibling.classList.contains('spellListButton') == true){this.previousSibling.previousSibling.classList.remove('spellListButton'); this.previousSibling.previousSibling.style.backgroundColor = '${exclusionColor}'; this.classList.remove('fa-${toggleOn}'); this.classList.add('fa-${toggleOff}');}else{this.previousSibling.previousSibling.classList.add('spellListButton'); this.previousSibling.previousSibling.style.backgroundColor = '${inclusionColor}'; this.classList.remove('fa-${toggleOff}'); this.classList.add('fa-${toggleOn}');}"></button>`;
+              let spellbookLabel = ``;
+              if(spellbookFilter === true && innerItem.flags['spell-class-filter-for-5e'].parentClass !== '' && innerItem.flags['spell-class-filter-for-5e'].parentClass !== 'nochange'){
+                spellbookLabel = toTitleCase(innerItem.flags['spell-class-filter-for-5e'].parentClass) + ` | `;
+              }
+              if (searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== '' && searchLocation == 'compendium') {
+                singleImport = `<button style="width:8%; margin:${smallMargin} 1% ${smallMargin} 0%; ${iconSize}" title="Import ${innerItem.name.replaceAll("'", "\`")} to ${specifiedCharacter.replaceAll("'", "\`")}" value="${innerItem.id}" class="spellImportButton fas fa-${importIcon}" onclick="if(game.packs.get('${packName}').get('${innerItem.id}') !== undefined && '${searchCharacter}' !== ''){const currentPrep = document.querySelector('#prepModes').value; const currentMod = document.querySelector('#abMod').value; const currentCC  = document.querySelector('#compChange').value; const currentComp = document.querySelector('#components').value; const currentNum = document.querySelector('#useNum').value; const currentUses = document.querySelector('#uses').value; const currentAdept = document.querySelector('#elementalAdept').value; let successCount = 0; let currentSpell = game.packs.get('${packName}').get('${innerItem.id}').toObject(); if(currentSpell.system.preparation.mode !== currentPrep){currentSpell.system.preparation.mode = currentPrep;} if(currentSpell.system.ability !== currentMod){currentSpell.system.ability = currentMod;}if(currentComp !== ''){let logic = false; if(currentCC == 'add'){logic = true;} if(currentComp == 'verbal'){currentSpell.system.components.vocal = logic;}else if(currentComp == 'somatic'){currentSpell.system.components.somatic = logic;}else if(currentComp == 'material'){currentSpell.system.components.material = logic;}else if(currentComp == 'ritual'){currentSpell.system.components.ritual = logic;}else if(currentComp == 'concentration'){currentSpell.system.components.concentration = logic;}} currentSpell.system.uses.value = currentNum; currentSpell.system.uses.max = currentNum; currentSpell.system.uses.per = currentUses;if(currentAdept !== '' && currentSpell.system.damage.parts.length > 0){for (let d = 0;  d < currentSpell.system.damage.parts.length; d++) {if(currentSpell.system.damage.parts[d][1] == currentAdept && currentSpell.system.damage.parts[d][0].includes('min2') == false){currentSpell.system.damage.parts[d][0] = currentSpell.system.damage.parts[d][0].replaceAll('d4', 'd4min2').replaceAll('d6', 'd6min2').replaceAll('d8', 'd8min2').replaceAll('d10', 'd10min2').replaceAll('d12', 'd12min2'); successCount += 1;}} if(successCount >= currentSpell.system.damage.parts.length){currentSpell.system.damage.versatile = currentSpell.system.damage.versatile.replaceAll('d4', 'd4min2').replaceAll('d6', 'd6min2').replaceAll('d8', 'd8min2').replaceAll('d10', 'd10min2').replaceAll('d12', 'd12min2'); currentSpell.system.scaling.formula = currentSpell.system.scaling.formula.replaceAll('d4', 'd4min2').replaceAll('d6', 'd6min2').replaceAll('d8', 'd8min2').replaceAll('d10', 'd10min2').replaceAll('d12', 'd12min2');}}if(${spellbookFilter} === true){currentSpell.flags['spell-class-filter-for-5e'].parentClass = document.querySelector('#spellbook').value;} if(${customSection} === true){currentSpell.flags['custom-character-sheet-sections'].sectionName = document.querySelector('#customSection').value;} game.actors.get('${searchCharacter}').createEmbeddedDocuments('Item', [currentSpell]); this.classList.remove('fa-${importIcon}'); this.classList.add('fa-${successIcon}'); this.setAttribute('title', 'Imported to ${specifiedCharacter.replaceAll("'", "\`")}');}else{ui.notifications.warn('Spell compendium has been re-packed. Please run a new search.')}"></button><button style="width:8%; margin:${smallMargin} 1% ${smallMargin} 0%; ${iconSize}" class="fas fa-${toggleOn}" title="Toggle Inclusion in Import & Delete All" value="${innerItem.id}" onclick="if(this.previousSibling.previousSibling.classList.contains('spellListButton') == true){this.previousSibling.previousSibling.classList.remove('spellListButton'); this.previousSibling.previousSibling.style.backgroundColor = '${exclusionColor}'; this.classList.remove('fa-${toggleOn}'); this.classList.add('fa-${toggleOff}'); if(document.getElementById('importAll') !== null && document.getElementById('importAll') !== undefined){document.getElementById('importAll').innerHTML = document.getElementById('importAll').innerHTML.replace(document.getElementById('importAll').innerHTML.replace(/[^0-9\.]/g, ''), parseInt(document.getElementById('importAll').innerHTML.replace(/[^0-9\.]/g, ''))-1)}; if(document.getElementById('deleteAll') !== null && document.getElementById('deleteAll') !== undefined){document.getElementById('deleteAll').innerHTML= document.getElementById('deleteAll').innerHTML.replace(document.getElementById('deleteAll').innerHTML.replace(/[^0-9\.]/g, ''), parseInt(document.getElementById('deleteAll').innerHTML.replace(/[^0-9\.]/g, ''))-1);}}else{this.previousSibling.previousSibling.classList.add('spellListButton'); this.previousSibling.previousSibling.style.backgroundColor = '${inclusionColor}'; this.classList.remove('fa-${toggleOff}'); this.classList.add('fa-${toggleOn}'); if(document.getElementById('importAll') !== null && document.getElementById('importAll') !== undefined){document.getElementById('importAll').innerHTML = document.getElementById('importAll').innerHTML.replace(document.getElementById('importAll').innerHTML.replace(/[^0-9\.]/g, ''), parseInt(document.getElementById('importAll').innerHTML.replace(/[^0-9\.]/g, ''))+1)}; if(document.getElementById('deleteAll') !== null && document.getElementById('deleteAll') !== undefined){document.getElementById('deleteAll').innerHTML= document.getElementById('deleteAll').innerHTML.replace(document.getElementById('deleteAll').innerHTML.replace(/[^0-9\.]/g, ''), parseInt(document.getElementById('deleteAll').innerHTML.replace(/[^0-9\.]/g, ''))+1);}}"></button>`;
+                importWidth = '80%';
+              } else if (searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== '' && searchLocation !== 'compendium' && innerItem.system.preparation.mode == 'prepared') {
+                if (innerItem.system.preparation.prepared == false) {
+                  singleImport = `<button style="width:8%; margin:${smallMargin} 1% ${smallMargin} 0%; ${iconSize}" title="Unprepared | ${spellbookLabel}Click to Prepare ${innerItem.name.replaceAll("'", "\`")} for ${specifiedCharacter.replaceAll("'", "\`")}" value="${innerItem.id}" class="spellImportButton fas fa-${unpreparedIcon}" onclick="if(this.classList.contains('fa-${unpreparedIcon}') === true){game.actors.get('${searchCharacter}').items.get('${innerItem.id}').update({'system.preparation.prepared' : true});this.setAttribute('title', 'Prepared | ${spellbookLabel}Click to Unprepare ${innerItem.name.replaceAll("'", "\`")} for ${specifiedCharacter.replaceAll("'", "\`")}'); this.classList.remove('fa-${unpreparedIcon}'); this.classList.add('fa-${preparedIcon}');if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined){setTimeout(() => {document.getElementById('prepareList').click();}, ${shortTimeout})}}else{game.actors.get('${searchCharacter}').items.get('${innerItem.id}').update({'system.preparation.prepared' : false});this.setAttribute('title', 'Unprepared | ${spellbookLabel}Click to Prepare ${innerItem.name.replaceAll("'", "\`")} for ${specifiedCharacter.replaceAll("'", "\`")}'); this.classList.remove('fa-${preparedIcon}'); this.classList.add('fa-${unpreparedIcon}');if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined){setTimeout(() => {document.getElementById('prepareList').click();}, ${shortTimeout})}}"></button>${extraButton}`;
+                } else {
+                  singleImport = `<button style="width:8%; margin:${smallMargin} 1% ${smallMargin} 0%; ${iconSize}" title="Prepared | ${spellbookLabel}Click to Unprepare ${innerItem.name.replaceAll("'", "\`")} for ${specifiedCharacter.replaceAll("'", "\`")}" value="${innerItem.id}" class="spellImportButton fas fa-${preparedIcon}" onclick="if(this.classList.contains('fa-${unpreparedIcon}') === true){game.actors.get('${searchCharacter}').items.get('${innerItem.id}').update({'system.preparation.prepared' : true});this.setAttribute('title', 'Prepared | ${spellbookLabel}Click to Unprepare ${innerItem.name.replaceAll("'", "\`")} for ${specifiedCharacter.replaceAll("'", "\`")}'); this.classList.remove('fa-${unpreparedIcon}'); this.classList.add('fa-${preparedIcon}');if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined){setTimeout(() => {document.getElementById('prepareList').click();}, ${shortTimeout})}}else{game.actors.get('${searchCharacter}').items.get('${innerItem.id}').update({'system.preparation.prepared' : false});this.setAttribute('title', 'Unprepared | ${spellbookLabel}Click to Prepare ${innerItem.name.replaceAll("'", "\`")} for ${specifiedCharacter.replaceAll("'", "\`")}'); this.classList.remove('fa-${preparedIcon}'); this.classList.add('fa-${unpreparedIcon}');if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined){setTimeout(() => {document.getElementById('prepareList').click();}, ${shortTimeout})}}"></button>${extraButton}`;
+                }
+                importWidth = '80%';
+              } else if (searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== '' && searchLocation !== 'compendium') {
+                let symbol = innateIcon;
+                let modeLabel = `Innate`;
+                if(innerItem.system.preparation.mode == 'pact'){
+                  symbol = pactIcon;
+                  modeLabel = `Pact Magic`;
+                }else if(innerItem.system.preparation.mode == 'always'){
+                  symbol = alwaysIcon;
+                  modeLabel = `Always Prepared`;
+                }else if(innerItem.system.preparation.mode == 'atwill'){
+                  symbol = atwillIcon;
+                  modeLabel = `At-Will`;
+                }
+                singleImport = `<button style="width:8%; margin:${smallMargin} 1% ${smallMargin} 0%; ${iconSize}" title="${modeLabel} | ${spellbookLabel}Double-Click to Delete ${innerItem.name.replaceAll("'", "\`")} from ${specifiedCharacter.replaceAll("'", "\`")}" value="${innerItem.id}" class="spellImportButton fas fa-${symbol}" ondblclick="game.actors.get('${searchCharacter}').deleteEmbeddedDocuments('Item', ['${innerItem.id}']); this.previousSibling.removeAttribute('onclick'); this.previousSibling.classList.remove('spellListButton'); this.previousSibling.style.backgroundColor = '${exclusionColor}'; this.style.width = '17%'; this.parentNode.removeChild(this.nextSibling); this.removeAttribute('ondblclick'); this.classList.remove('fa-${symbol}'); this.classList.add('fa-${deletedIcon}'); this.setAttribute('title', 'Deleted ${innerItem.name.replaceAll("'", "\`")} for ${specifiedCharacter.replaceAll("'", "\`")}'); this.classList.remove('spellImportButton');"></button>${extraButton}`;
+                importWidth = '80%';
+              }
+              newTableArray[otherSort + innerItem.name + innerItem.id] = `<button style="width:${importWidth}; margin:${smallMargin} 1%; text-align:left;" title="${nameSide} ${innerItem.name.replaceAll("'", "\`")} ${nameSide}&#10Lvl. ${innerItem.system.level} | ${toTitleCase(innerItem.system.school)}. | ${innerItem.system.activation.cost} ${toTitleCase(innerItem.system.activation.type.replace('manual', '').replace('damage', ''))} | ${durAdd2}${toTitleCase(innerItem.system.duration.units)}${durAdd}&#10${innerItem.system.source}&#10;Con. ${innerItem.system.components.concentration.toString().replace('true', '✔').replace('false', '✖')} | Rit. ${innerItem.system.components.ritual.toString().replace('true', '✔').replace('false', '✖')} | Vrb. ${innerItem.system.components.vocal.toString().replace('true', '✔').replace('false', '✖')} | Som. ${innerItem.system.components.somatic.toString().replace('true', '✔').replace('false', '✖')} | Mat. ${innerItem.system.components.material.toString().replace('true', '✔').replace('false', '✖')}&#10&#10Click to Open Spell Information${leftClick}" value="${innerItem.id}" class="spellListButton" ${itemOnclick}><span style="font-family:${monospace}; display:inline-block; vertical-align:top; letter-spacing:${letterSpacing};">[Lvl. ${innerItem.system.level}]</span> ${innerItem.name.replaceAll("'", "\`")}</button>${singleImport}`;
+              count += 1;
+            }
+          }
+        }
+        newTableArray = Object.keys(newTableArray).sort().forEach((v, i) => {
+          newTableContents += newTableArray[v];
+        });
+        let searchAdd_Time = toTitleCase(searchAction.replace('manual', '').replace('damage', ''));
+        let searchAdd_School = '';
+        let searchAdd_Level = ' Spells';
+        let searchAdd_Source = ` - ${searchSource.toUpperCase()}`;
+        let searchAdd_Components = '';
+        if (searchLocation == 'sheet') {
+          if (searchCharacter == null || searchCharacter == undefined || searchCharacter == ""){
+            ui.notifications.warn("You cannot search a character's spellbook without specifying a character. Here is a compendium search instead.");
+          } else {
+            searchAdd_Time = `${game.actors.get(searchCharacter).name}'s`;
+          }
+        } else if (searchAdd_Time == '' && searchDuration !== '') {
+          searchAdd_Time = toTitleCase(searchDuration);
+          if (searchDuration == 'inst' || searchDuration == 'spec' || searchDuration == 'perm') {
+            searchAdd_Time = `${searchAdd_Time}.`;
+          }
+        }
+        if (searchSchool !== '' && searchSchool !== 'multi') {
+          searchAdd_School = ` ${toTitleCase(searchSchool)}.`;
+        }
+        if (searchLevel !== '' && searchLevel == 0) {
+          searchAdd_Level = ' Cantrips';
+        } else if (searchLevel == 'multi') {
+          searchAdd_Level = ' Spells of Multiple Levels';
+        } else if (searchLevel !== '') {
+          searchAdd_Level = ` Level ${searchLevel} Spells`;
+        }
+        if (searchSource == '') {
+          searchAdd_Source = ' - All WotC Publications';
+        } else if (searchSource == 'any' || searchSource == 'all') {
+          searchAdd_Source = ' - Any & All Publications';
+        } else if (searchSource == 'thirdparty') {
+          searchAdd_Source = ' - All Third-Party Publications';
+        }
+        if (searchConcen == 'true' || searchRitual == 'true' || searchVerbal == 'true' || searchSomatic == 'true' || searchMaterial == 'true') {
+          searchAdd_Components = ' w/ ';
+          if (searchConcen == 'true') {
+            searchAdd_Components = `${searchAdd_Components}Con.`;
+          }
+          if (searchRitual == 'true') {
+            if (searchAdd_Components !== ' w/ ') {
+              searchAdd_Components = `${searchAdd_Components} & `;
+            }
+            searchAdd_Components = `${searchAdd_Components}Rit.`;
+          }
+          if (searchVerbal == 'true') {
+            if (searchAdd_Components !== ' w/ ') {
+              searchAdd_Components = `${searchAdd_Components} & `;
+            }
+            
+            searchAdd_Components = `${searchAdd_Components}Vrb.`;
+          }
+          if (searchSomatic == 'true') {
+            if (searchAdd_Components !== ' w/ ') {
+              searchAdd_Components = `${searchAdd_Components} & `;
+            }
+            searchAdd_Components = `${searchAdd_Components}Som.`;
+          }
+          if (searchMaterial == 'true') {
+            if (searchAdd_Components !== ' w/ ') {
+              searchAdd_Components = `${searchAdd_Components} & `;
+            }
+            searchAdd_Components = `${searchAdd_Components}Mat.`;
+          }
+        } else if (searchConcen == 'false' || searchRitual == 'false' || searchVerbal == 'false' || searchSomatic == 'false' || searchMaterial == 'false') {
+          searchAdd_Components = ' w/o ';
+          if (searchConcen == 'false') {
+            searchAdd_Components = `${searchAdd_Components}Con.`;
+          }
+          if (searchRitual == 'false') {
+            if (searchAdd_Components !== ' w/ ') {
+              searchAdd_Components = `${searchAdd_Components} & `;
+            }
+            searchAdd_Components = `${searchAdd_Components}Rit.`;
+          }
+          if (searchVerbal == 'false') {
+            if (searchAdd_Components !== ' w/ ') {
+              searchAdd_Components = `${searchAdd_Components} & `;
+            }
+            searchAdd_Components = `${searchAdd_Components}Vrb.`;
+          }
+          if (searchSomatic == 'false') {
+            if (searchAdd_Components !== ' w/ ') {
+              searchAdd_Components = `${searchAdd_Components} & `;
+            }
+            searchAdd_Components = `${searchAdd_Components}Som.`;
+          }
+          if (searchMaterial == 'false') {
+            if (searchAdd_Components !== ' w/ ') {
+              searchAdd_Components = `${searchAdd_Components} & `;
+            }
+            searchAdd_Components = `${searchAdd_Components}Mat.`;
+          }
+        } else if (searchRange !== '') {
+          searchAdd_Components = ' w/ Spec. Ranges';
+        }
+        let searchAdd_DamType = '';
+        if (searchDamage !== '' && searchDamage !== 'any' && searchDamage !== 'blank' && searchDamage !== 'none' && searchDamage !== 'multi' && searchDamage !== 'midi-none' && searchDamage !== 'temphp') {
+          searchAdd_DamType = ` ${toTitleCase(searchDamage)}`;
+        } else if (searchType !== '' && searchType !== 'any' && searchType !== 'blank' && searchType !== 'none') {
+          let endBit = '';
+          if (searchType !== 'save' && searchType !== 'other') {
+            endBit = '.';
+          }
+          searchAdd_DamType = ` ${toTitleCase(searchType)}${endBit}`;
+        }
+        let openButton = `<button onclick='game.actors.get(\`${searchCharacter}\`).sheet.render(true)' style='width:48%; margin:${smallMargin} 1%;'>Open Character Sheet</button>`;
+        if (searchCharacter == '') {
+          openButton = `<button onclick='game.packs.get(\`${packName}\`).render(true)' style='width:48%; margin:${smallMargin} 1%;'>Open Spell Compendium</button>`;
+        }
+        let massImport = '';
+        if (maxMassImport >= count && searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== '' && searchLocation == 'compendium') {
+          massImport = `<button style='width:98%; margin:${smallMargin} 1%;' id='importAll' title='Click to Import All Selected Spells'>Import All ${count} Spells to ${game.actors.get(searchCharacter).name}</button>`;
+        }
+        let spellbookField = '';
+        if(spellbookFilter=== true && searchLocation == 'compendium'){
+          spellbookField = `<label for="spellbook" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Spellbook</label><select id="spellbook" style="width:67%; margin:${largeMargin} 1%; display:inline-block;"><option value=""></option>${classOptions}<option value="custom">Custom</option></select>`;
+        }else if(spellbookFilter === true){
+          spellbookField = `<label for="spellbook" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Spellbook</label><select id="spellbook" style="width:67%; margin:${largeMargin} 1%; display:inline-block;"><option value="nochange">Leave Unchanged</option><option value="">---</option>${classOptions}<option value="custom">Custom</option></select>`;
+        }
+        let custSec = '';
+        if(customSection === true && searchLocation == 'compendium'){
+          custSec = `<label for="customSection" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Custom Section</label><input type="text" id="customSection" name="customSection" style="width:67%; margin:${largeMargin} 1%; display:inline-block;" placeholder="Set custom section name here . . .">`;
+        }else if(customSection === true){
+          custSec = `<label for="customSection" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Custom Section</label><input type="text" id="customSection" name="customSection" style="width:67%; margin:${largeMargin} 1%; display:inline-block;" placeholder="Set custom section name here . . ." value="Leave Unchanged">`;
+        }
+        let massDelete = '';
+        if (maxMassDelete >= count && searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== '' && searchLocation == 'compendium') {
+          massDelete = `<button style='width:98%; margin:${smallMargin} 1%;' id='deleteAll' title='Double-Click to Delete All Selected Spells'>Delete All ${count} Spells from ${game.actors.get(searchCharacter).name}</button>`;
+        }
+        let importOptions = ``;
+        let additionalOptions = 'none';
+        if(count < hideOptions){
+          additionalOptions = 'block';
+        }
+        if(searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== '' && searchLocation == 'compendium'){
+          importOptions = `<h3 style="padding:${headerPadding}; margin:${largeMargin} 0px;" id="optionsButton" onclick="if(this.nextSibling.style.display == 'none'){this.nextSibling.style.display = 'block';}else{this.nextSibling.style.display = 'none';}">Toggle Additional Options <i class="fas fa-${categoryToggle}" style="display:inline-block; float:right;"></i></h3><div id="additionalOptions" style="display:${additionalOptions};"><label for="prepModes" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Import as . . .</label><select id="prepModes" style="width:67%; margin:${largeMargin} 1%; display:inline-block;"><option value="prepared">Prepared</option><option value="pact">Pact Magic</option><option value="always">Always Prepared</option><option value="atwill">At-Will</option><option value="innate">Innate Spellcasting</option></select><label for="abMod" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Ability Modifier</label><select id="abMod" style="width:67%; margin:${largeMargin} 1%; display:inline-block;"><option value="">Default</option>${abilityOptions}</select><label for="components" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Components</label><select id="compChange" style="width:21%; margin:${largeMargin} 1%; display:inline-block;"><option value="add">Add</option><option value="remove">Remove</option></select><select id="components" style="width:44%; margin:${largeMargin} 1%; display:inline-block;"><option value=""></option><option value="verbal">Verbal</option><option value="somatic">Somatic</option><option value="material">Material</option><option value="concentration">Concentration</option><option value="ritual">Ritual</option></select><label for="uses" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Uses</label><input type="number" id="useNum" name="useNum" style="width:21%; margin:${largeMargin} 1%; display:inline-block;" placeholder="# of Uses"><select id="uses" style="width:44%; margin:${largeMargin} 1%; display:inline-block;"><option value=""></option><option value="sr">Short Rest</option><option value="lr">Long Rest</option><option value="day">Day</option><option value="charges">Charges</option></select><label for="elementalAdept" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Elemental Adept</label><select id="elementalAdept" style="width:67%; margin:${largeMargin} 1%; display:inline-block;"><option value=""></option>${damageOptions}</select>${spellbookField}${custSec}${massDelete}<button style='width:48%; margin:${smallMargin} 1%;' id='excludeAll' title='Click to Exclude All Spells in Mass Import & Delete'>Exclude All</button><button style='width:48%; margin:${smallMargin} 1%;' id='includeAll' title='Click to Include All Spells in Mass Import & Delete'>Include All</button></div>`;
+        }else if(searchCharacter !== null && searchCharacter !== undefined && searchCharacter !== ''){
+          importOptions = `<h3 style="padding:${headerPadding}; margin:${largeMargin} 0px;" id="optionsButton" onclick="if(this.nextSibling.style.display == 'none'){this.nextSibling.style.display = 'block';}else{this.nextSibling.style.display = 'none';}">Toggle Additional Options <i class="fas fa-${categoryToggle}" style="display:inline-block; float:right;"></i></h3><div id="additionalOptions" style="display:${additionalOptions};"><label for="prepModes" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Preparation Mode</label><select id="prepModes" style="width:67%; margin:${largeMargin} 1%; display:inline-block;"><option value="nochange">Leave Unchanged</option><option value="prepared">Prepared</option><option value="pact">Pact Magic</option><option value="always">Always Prepared</option><option value="atwill">At-Will</option><option value="innate">Innate Spellcasting</option></select><label for="abMod" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Ability Modifier</label><select id="abMod" style="width:67%; margin:${largeMargin} 1%; display:inline-block;"><option value="nochange">Leave Unchanged</option><option value="">Default</option>${abilityOptions}</select><label for="components" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Components</label><select id="compChange" style="width:21%; margin:${largeMargin} 1%; display:inline-block;"><option value="add">Add</option><option value="remove">Remove</option></select><select id="components" style="width:44%; margin:${largeMargin} 1%; display:inline-block;"><option value="nochange">Leave Unchanged</option><option value="verbal">Verbal</option><option value="somatic">Somatic</option><option value="material">Material</option><option value="concentration">Concentration</option><option value="ritual">Ritual</option></select><label for="uses" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Uses</label><input type="number" id="useNum" name="useNum" style="width:21%; margin:${largeMargin} 1%; display:inline-block;" placeholder="# of Uses"><select id="uses" style="width:44%; margin:${largeMargin} 1%; display:inline-block;"><option value="nochange">Leave Unchanged</option><option value=""></option><option value="sr">Short Rest</option><option value="lr">Long Rest</option><option value="day">Day</option><option value="charges">Charges</option></select><label for="elementalAdept" style="font-weight:${labelWeight}; width:29%; margin:${largeMargin} 1%; display:inline-block;">Elemental Adept</label><select id="adeptChange" style="width:21%; margin:${largeMargin} 1%; display:inline-block;"><option value="add">Add</option><option value="remove">Remove</option></select><select id="elementalAdept" style="width:44%; margin:${largeMargin} 1%; display:inline-block;"><option value="nochange">Leave Unchanged</option>${damageOptions}</select>${spellbookField}${custSec}${massDelete}<button style='width:48%; margin:${smallMargin} 1%;' id='editAll' title='Click to Edit All Selected Spells'>Edit All</button><button style='width:23%; margin:${smallMargin} 1%;' id='excludeAll' title='Click to Exclude All Spells in Mass Edits'>Exclude All</button><button style='width:23%; margin:${smallMargin} 1%;' id='includeAll' title='Click to Include All Spells in Mass Edits'>Include All</button><div id='preparedBox' style='display:${prepSuccess};'><button style='width:48%; margin:${smallMargin} 1%;' id='prepareList' title='Click to View List of All Currently Prepared Spells'>View All Prepared Spells</button><button style='width:23%; margin:${smallMargin} 1%;' id='unprepareAll' title='Click to Unprepare All Selected Leveled Preparation Spells'>Unprep. All</button><button style='width:23%; margin:${smallMargin} 1%;' id='prepareAll' title='Click to Prepare All Selected Leveled Preparation Spells'>Prepare All</button></div></div>`;
+        }
+        let dialogTitle = `${searchAdd_Time} ${toTitleCase(searchClass)}${searchAdd_School}${searchAdd_DamType}${searchAdd_Level}${searchAdd_Components}${searchAdd_Source}`;
+        if (dialogTitle.length >= 56) {
+          dialogTitle = `${dialogTitle.substring(0, 55)} . . .`;
+        }
+        const myDialog = new Dialog({
+          title: dialogTitle,
+          content: `<style>#search-results {min-width: ${minWidth};}</style>${openButton}<button onclick='game.macros.getName(\`${macroName}\`).execute()' style='width:48%; margin:${smallMargin} 1%;'>Open Spell Search</button>${massImport}${importOptions}${newTableContents}`,
+          buttons: {},
+          render: (html) => {
+              
+              const btn = html[0].querySelector('#importAll');
+              if (btn !== null) {
+                btn.addEventListener('click', async () => {
+                  const buttonClass = html[0].getElementsByClassName('spellListButton');
+                  const currentPrep = html[0].querySelector('#prepModes').value;
+                  const currentMod = html[0].querySelector('#abMod').value;
+                  const currentCC  = html[0].querySelector('#compChange').value;
+                  const currentComp = html[0].querySelector('#components').value;
+                  const currentNum = html[0].querySelector('#useNum').value;
+                  const currentUses = html[0].querySelector('#uses').value;
+                  const currentAdept = html[0].querySelector('#elementalAdept').value;
+                  let currentSpellbook = ``;
+                  if(spellbookFilter === true && html[0].querySelector('#spellbook').value !== undefined){
+                    currentSpellbook = html[0].querySelector('#spellbook').value;
+                  }
+                  let currentSec =  ``;
+                  if(customSection === true && html[0].querySelector('#customSection').value !== undefined){
+                    currentSec = html[0].querySelector('#customSection').value;
+                  }
+                  for (let i = 0; i < buttonClass.length; i++) {
+                    buttonClass[i].nextSibling.style.backgroundColor = exclusionColor;
+                  }
+                  for (let b = 0; b < buttonClass.length; b++) {
+                    let sibling = buttonClass[b].nextSibling;
+                    sibling.style.backgroundColor = inclusionColor;
+                    sibling.classList.remove('fa-'+importIcon);
+                    sibling.classList.add('fa-'+successIcon);
+                    sibling.setAttribute('title', sibling.getAttribute('title').replace("Import ", "Imported "));
+                    if (b == 1) {
+                      ui.notifications.info('Spells are being added. Please give the process a moment to complete, then check your sheet.');
+                    }
+                    if (game.packs.get(packName).get(buttonClass[b].value) !== undefined) {
+                      let currentSpell = game.packs.get(packName).get(buttonClass[b].value).toObject();
+                      if(currentSpell.system.preparation.mode !== currentPrep){
+                        currentSpell.system.preparation.mode = currentPrep;
+                      }
+                      if(currentSpell.system.ability !== currentMod){
+                        currentSpell.system.ability = currentMod;
+                      }
+                      
+                      if(currentComp !== ""){
+                        let logic = false;
+                        if(currentCC == "add"){
+                          logic = true;
+                        }
+                        if(currentComp == "verbal"){
+                          currentSpell.system.components.vocal = logic;
+                        }else if(currentComp == "somatic"){
+                          currentSpell.system.components.somatic = logic;
+                        }else if(currentComp == "material"){
+                          currentSpell.system.components.material = logic;
+                        }else if(currentComp == "ritual"){
+                          currentSpell.system.components.ritual = logic;
+                        }else if(currentComp == "concentration"){
+                          currentSpell.system.components.concentration = logic;
+                        }
+                      }
+                      
+                      currentSpell.system.uses.value = currentNum;
+                      currentSpell.system.uses.max = currentNum;
+                      currentSpell.system.uses.per = currentUses;
+                      
+                      let successCount = 0;
+                      if(currentAdept !== "" && currentSpell.system.damage.parts.length > 0){
+                        for (let d = 0;  d < currentSpell.system.damage.parts.length; d++) {
+                          if(currentSpell.system.damage.parts[d][1] == currentAdept && currentSpell.system.damage.parts[d][0].includes("min2") == false){
+                            currentSpell.system.damage.parts[d][0] = currentSpell.system.damage.parts[d][0].replaceAll("d4", "d4min2").replaceAll("d6", "d6min2").replaceAll("d8", "d8min2").replaceAll("d10", "d10min2").replaceAll("d12", "d12min2");
+                            successCount += 1;
+                          }
+                        }
+                        if(successCount >= currentSpell.system.damage.parts.length){
+                          currentSpell.system.damage.versatile = currentSpell.system.damage.versatile.replaceAll("d4", "d4min2").replaceAll("d6", "d6min2").replaceAll("d8", "d8min2").replaceAll("d10", "d10min2").replaceAll("d12", "d12min2");
+                          currentSpell.system.scaling.formula = currentSpell.system.scaling.formula.replaceAll("d4", "d4min2").replaceAll("d6", "d6min2").replaceAll("d8", "d8min2").replaceAll("d10", "d10min2").replaceAll("d12", "d12min2");
+                        }
+                      }
+                      
+                      if(spellbookFilter === true && (currentSpell.flags["spell-class-filter-for-5e"] == undefined || currentSpellbook !== currentSpell.flags["spell-class-filter-for-5e"].parentClass)){
+                        currentSpell.flags["spell-class-filter-for-5e"].parentClass = currentSpellbook;
+                      }
+                      if(customSection === true && (currentSpell.flags["custom-character-sheet-sections"] == undefined || currentSec !== currentSpell.flags["custom-character-sheet-sections"].sectionName)){
+                        currentSpell.flags["custom-character-sheet-sections"].sectionName = currentSec;
+                      }
+                      await game.actors.get(searchCharacter).createEmbeddedDocuments('Item', [currentSpell]);
+                    } else if (b == 0) {
+                      ui.notifications.warn('Spell compendium has been re-packed. Please run a new search.');
+                      break;
+                    }
+                  }
+                });
+              }
+              
+              const btn2 = html[0].querySelector('#deleteAll');
+              if (btn2 !== null) {
+                btn2.addEventListener('dblclick', async () => {
+                  const buttonClass = html[0].getElementsByClassName('spellListButton');
+                  let errorCount = 0;
+                  for (let i = 0; i < buttonClass.length; i++) {
+                    buttonClass[i].nextSibling.style.backgroundColor = exclusionColor;
+                  }
+                  for (let d = 0; d < buttonClass.length; d++) {
+                    if (d == 1) {
+                      ui.notifications.info('Spells are being deleted. Please give the process a moment to complete, then check your sheet.');
+                    }
+                    let sibling = buttonClass[d].nextSibling;
+                    sibling.style.backgroundColor = inclusionColor;
+                    sibling.classList.remove('fa-'+successIcon);
+                    sibling.classList.add('fa-'+importIcon);
+                    sibling.setAttribute('title', sibling.getAttribute('title').replace("Imported ", "Import "));
+                    if (game.actors.get(searchCharacter).items.getName(buttonClass[d].innerText.replaceAll(/\[.*?\]/g, '').replace(' ', '').replaceAll("`", "'")) !== undefined && game.actors.get(searchCharacter).items.getName(buttonClass[d].innerText.replaceAll(/\[.*?\]/g, '').replace(' ', '').replaceAll("`", "'")) !== undefined) {
+                      await game.actors.get(searchCharacter).deleteEmbeddedDocuments('Item', [game.actors.get(searchCharacter).items.getName(buttonClass[d].innerText.replaceAll(/\[.*?\]/g, '').replace(' ', '').replaceAll("`", "'")).id]);
+                    }
+                  }
+                });
+              }
+              
+              const btn3 = html[0].querySelector('#excludeAll');
+              if (btn3 !== null) {
+                btn3.addEventListener('click', () => {
+                  const buttonClass = html[0].getElementsByClassName('spellImportButton');
+                  for (let e = 0; e < buttonClass.length; e++) {
+                    buttonClass[e].previousSibling.classList.remove("spellListButton");
+                    buttonClass[e].previousSibling.style.backgroundColor = exclusionColor;
+                    buttonClass[e].nextSibling.classList.remove('fa-'+toggleOn);
+                    buttonClass[e].nextSibling.classList.add('fa-'+toggleOff);
+                  }
+                  if(document.getElementById('importAll') !== null && document.getElementById('importAll') !== undefined){document.getElementById('importAll').innerHTML = document.getElementById('importAll').innerHTML.replace(/[0-9]/g, '').replace("Spells", "0 Spells");}
+                  if(document.getElementById('deleteAll') !== null && document.getElementById('deleteAll') !== undefined){document.getElementById('deleteAll').innerHTML= document.getElementById('deleteAll').innerHTML.replace(/[0-9]/g, '').replace("Spells", "0 Spells");}
+                });
+              }
+              
+              const btn4 = html[0].querySelector('#includeAll');
+              if (btn4 !== null) {
+                btn4.addEventListener('click', () => {
+                  const buttonClass = html[0].getElementsByClassName('spellImportButton');
+                  for (let f = 0; f < buttonClass.length; f++) {
+                    buttonClass[f].previousSibling.classList.add('spellListButton');
+                    buttonClass[f].previousSibling.style.backgroundColor = inclusionColor;
+                    buttonClass[f].nextSibling.classList.remove('fa-'+toggleOff);
+                    buttonClass[f].nextSibling.classList.add('fa-'+toggleOn);
+                  }
+                  if(document.getElementById('importAll') !== null && document.getElementById('importAll') !== undefined){document.getElementById('importAll').innerHTML = document.getElementById('importAll').innerHTML.replace(/[0-9]/g, '').replace("Spells", buttonClass.length + " Spells");}
+                  if(document.getElementById('deleteAll') !== null && document.getElementById('deleteAll') !== undefined){document.getElementById('deleteAll').innerHTML= document.getElementById('deleteAll').innerHTML.replace(/[0-9]/g, '').replace("Spells", buttonClass.length + " Spells");}
+                });
+              }
+              
+              
+              const btn5 = html[0].querySelector('#editAll');
+              if (btn5 !== null) {
+                btn5.addEventListener('click', async () => {
+                  let buttonClass = html[0].getElementsByClassName('spellListButton');
+                  let initialPrep = html[0].querySelector('#prepModes').value;
+                  if(initialPrep == "prepared"){
+                    document.getElementById('preparedBox').style.display = 'block';
+                  }else if(initialPrep !== "nochange" && buttonClass.length >= (html[0].getElementsByClassName('fas').length-1)/2){
+                    document.getElementById('preparedBox').style.display = 'none';
+                  }
+                  let initialMod = html[0].querySelector('#abMod').value;
+                  let initialCC = html[0].querySelector('#compChange').value;
+                  let initialComp = html[0].querySelector('#components').value;
+                  let initialNum = html[0].querySelector('#useNum').value;
+                  let initialUses = html[0].querySelector('#uses').value;
+                  let initialChange = html[0].querySelector('#adeptChange').value;
+                  let initialAdept = html[0].querySelector('#elementalAdept').value;
+                  let currentSpellbook = 'nochange';
+                  if(spellbookFilter === true && html[0].querySelector('#spellbook').value !== undefined){
+                    currentSpellbook = html[0].querySelector('#spellbook').value;
+                  }
+                  let currentSec = 'nochange';
+                  if(customSection === true && html[0].querySelector('#customSection').value !== undefined){
+                    currentSec = html[0].querySelector('#customSection').value;
+                  }
+                  let symbol = innateIcon;
+                  let modeLabel = ``;
+                  if(initialPrep == 'pact'){
+                    symbol = pactIcon;
+                    modeLabel = `Pact Magic`;
+                  }else if(initialPrep == 'always'){
+                    symbol = alwaysIcon;
+                    modeLabel = `Always Prepared`;
+                  }else if(initialPrep == 'atwill'){
+                    symbol = atwillIcon;
+                    modeLabel = `At-Will`;
+                  }else if(initialPrep == 'prepared'){
+                    symbol = unpreparedIcon;
+                    modeLabel = `Unprepared`;
+                  }else if(initialPrep == 'innate'){
+                    symbol = innateIcon;
+                    modeLabel = `Innate`;
+                  }
+                  for (let i = 0; i < buttonClass.length; i++) {
+                    buttonClass[i].nextSibling.style.backgroundColor = exclusionColor;
+                  }
+                  for (let g = 0; g < buttonClass.length; g++) {
+                    if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined && g === (buttonClass.length-1)){
+                      setTimeout(() => {document.getElementById('prepareList').click();}, shortTimeout);
+                    }
+                    buttonClass[g].nextSibling.style.backgroundColor = inclusionColor;
+                    if (g == 1) {
+                      ui.notifications.info('Spells are being edited. Please give the process a moment to complete before making further edits.');
+                    }
+                    let currentSpell = game.actors.get(searchCharacter).items.get(buttonClass[g].value);
+                    let currentPrep = initialPrep;
+                    let currentStatus = false;
+                    let currentMod = initialMod;
+                    if(initialPrep == "nochange"){
+                      currentPrep = currentSpell.system.preparation.mode;
+                      currentStatus = currentSpell.system.preparation.prepared;
+                    }
+                    if(initialPrep !== "nochange" || currentSpellbook !== "nochange"){
+                      
+                      if(modeLabel == ``){
+                        if(currentPrep == 'pact'){
+                          modeLabel = `Pact Magic`;
+                        }else if(currentPrep == 'always'){
+                          modeLabel = `Always Prepared`;
+                        }else if(currentPrep == 'atwill'){
+                          modeLabel = `At-Will`;
+                        }else if(currentPrep == 'prepared'){
+                          modeLabel = `Unprepared`;
+                        }else if(currentPrep == 'innate'){
+                          modeLabel = `Innate`;
+                        }
+                      }
+                      
+                      let newLabel = ``;
+                      if(currentSpellbook !== '' && currentSpellbook != 'nochange'){
+                        newLabel = toTitleCase(currentSpellbook) +` | `;
+                      }else if(currentSpell.getFlag('spell-class-filter-for-5e', 'parentClass') !== '' && currentSpell.getFlag('spell-class-filter-for-5e', 'parentClass') !== undefined){
+                        newLabel = toTitleCase(currentSpell.getFlag('spell-class-filter-for-5e', 'parentClass')) +` | `;
+                      }
+                      
+                      if(initialPrep !== 'nochange'){
+                        const prefix = "fa-";
+                        let classes = buttonClass[g].nextSibling.className.split(" ").filter(function(c) {
+                          return c.lastIndexOf(prefix, 0) !== 0;
+                        });
+                        buttonClass[g].nextSibling.className = classes.join(" ").trim();
+                        buttonClass[g].nextSibling.classList.add('fa-'+symbol);
+                      }
+                      
+                      if(currentSpell.system.preparation.mode == 'prepared'){
+                        buttonClass[g].nextSibling.setAttribute(`title`, `${modeLabel} | ${newLabel}Double-Click to Delete ${buttonClass[g].innerText.replaceAll(/\[.*?\]/g, '').replace(' ', '').replaceAll("'", "\`")} from ${specifiedCharacter.replaceAll("'", "\`")}`);
+                        buttonClass[g].nextSibling.setAttribute(`ondblclick`, `game.actors.get('${searchCharacter}').deleteEmbeddedDocuments('Item', ['${buttonClass[g].value}']); this.previousSibling.removeAttribute('onclick'); this.previousSibling.classList.remove('spellListButton'); this.previousSibling.style.backgroundColor = '${exclusionColor}'; this.style.width = '17%'; this.parentNode.removeChild(this.nextSibling); this.removeAttribute('ondblclick'); this.classList.remove('fa-${symbol}'); this.classList.add('fa-${deletedIcon}'); this.setAttribute('title', 'Deleted ${buttonClass[g].innerText.replaceAll(/\[.*?\]/g, '').replace(' ', '').replaceAll("'", "\`")} for ${specifiedCharacter.replaceAll("'", "\`")}'); this.classList.remove('spellImportButton');`);
+                        buttonClass[g].nextSibling.removeAttribute(`onclick`);
+                      }else{
+                        buttonClass[g].nextSibling.setAttribute(`title`, `${modeLabel} | ${newLabel}Prepare ${buttonClass[g].innerText.replaceAll(/\[.*?\]/g, '').replace(' ', '').replaceAll("'", "\`")} for ${specifiedCharacter.replaceAll("'", "\`")}`);
+                        buttonClass[g].nextSibling.setAttribute(`onclick`, `if(this.classList.contains('fa-${unpreparedIcon}') === true){game.actors.get('${searchCharacter}').items.get('${buttonClass[g].value}').update({'system.preparation.prepared' : true});this.setAttribute('title', 'Prepared | ${newLabel}Click to Unprepare ${buttonClass[g].innerText.replaceAll(/\[.*?\]/g, '').replace(' ', '').replaceAll("'", "\`")} for ${specifiedCharacter.replaceAll("'", "\`")}'); this.classList.remove('fa-${unpreparedIcon}'); this.classList.add('fa-${preparedIcon}');if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined){setTimeout(() => {document.getElementById('prepareList').click();}, ${shortTimeout})}}else{game.actors.get('${searchCharacter}').items.get('${buttonClass[g].value}').update({'system.preparation.prepared' : false});this.setAttribute('title', 'Unprepared | ${newLabel}Click to Prepare ${buttonClass[g].innerText.replaceAll(/\[.*?\]/g, '').replace(' ', '').replaceAll("'", "\`")} for ${specifiedCharacter.replaceAll("'", "\`")}'); this.classList.remove('fa-${preparedIcon}'); this.classList.add('fa-${unpreparedIcon}');if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined){setTimeout(() => {document.getElementById('prepareList').click();}, ${shortTimeout})}}`);
+                        buttonClass[g].nextSibling.removeAttribute(`ondblclick`);
+                      }
+                      
+                    }
+                    if(currentMod == "nochange"){
+                      currentMod = currentSpell.system.ability;
+                    }
+                    
+                    let currentVerbal = currentSpell.system.components.vocal;
+                    let currentSomatic = currentSpell.system.components.somatic;
+                    let currentMaterial = currentSpell.system.components.material;
+                    let currentConcentration = currentSpell.system.components.concentration;
+                    let currentRitual = currentSpell.system.components.ritual;
+                    if(initialComp !== "nochange"){
+                      let logic = false;
+                      let logicSymbol = '✖';
+                      let otherSymbol = '✔';
+                      if(initialCC == "add"){
+                        logic = true;
+                        logicSymbol = '✔';
+                        otherSymbol = '✖';
+                      }
+                      let initialPhrase;
+                      let replacementPhrase;
+                      if(initialComp == "verbal"){
+                        currentVerbal = logic;
+                        initialPhrase = "Vrb. "+otherSymbol;
+                        replacementPhrase = "Vrb. "+logicSymbol;
+                      }else if(initialComp == "somatic"){
+                        currentSomatic = logic;
+                        initialPhrase = "Som. "+otherSymbol;
+                        replacementPhrase = "Som. "+logicSymbol;
+                      }else if(initialComp == "material"){
+                        currentMaterial = logic;
+                        initialPhrase = "Mat. "+otherSymbol;
+                        replacementPhrase = "Mat. "+logicSymbol;
+                      }else if(initialComp == "ritual"){
+                        currentRitual = logic;
+                        initialPhrase = "Rit. "+otherSymbol;
+                        replacementPhrase = "Rit. "+logicSymbol;
+                      }else if(initialComp == "concentration"){
+                        currentConcentration = logic;
+                        initialPhrase = "Con. "+otherSymbol;
+                        replacementPhrase = "Con. "+logicSymbol;
+                      }
+                      buttonClass[g].setAttribute('title', buttonClass[g].getAttribute('title').replaceAll(initialPhrase, replacementPhrase));
+                    }
+                    
+                    let currentNum = currentSpell.system.uses.max;
+                    let currentUses = currentSpell.system.uses.per;
+                    if(initialUses !== "nochange"){
+                      currentNum = initialNum;
+                      currentUses = initialUses;
+                    }
+                    
+                    let arrayAdept = currentSpell.system.damage.parts;
+                    let versatileAdept = currentSpell.system.damage.versatile;
+                    let scalingAdept = currentSpell.system.scaling.formula;
+                    
+                    let successCount = 0;
+                    if(initialAdept !== "nochange" && initialChange == "add" && currentSpell.system.damage.parts.length > 0){
+                      for (let d = 0;  d < currentSpell.system.damage.parts.length; d++) {
+                        if(currentSpell.system.damage.parts[d][1] == initialAdept && currentSpell.system.damage.parts[d][0].includes("min2") == false){
+                          arrayAdept[d][0] = currentSpell.system.damage.parts[d][0].replaceAll("d4", "d4min2").replaceAll("d6", "d6min2").replaceAll("d8", "d8min2").replaceAll("d10", "d10min2").replaceAll("d12", "d12min2");
+                          successCount += 1;
+                        }
+                      }
+                      if(successCount >= currentSpell.system.damage.parts.length){
+                        versatileAdept = currentSpell.system.damage.versatile.replaceAll("d4", "d4min2").replaceAll("d6", "d6min2").replaceAll("d8", "d8min2").replaceAll("d10", "d10min2").replaceAll("d12", "d12min2");
+                        scalingAdept = currentSpell.system.scaling.formula.replaceAll("d4", "d4min2").replaceAll("d6", "d6min2").replaceAll("d8", "d8min2").replaceAll("d10", "d10min2").replaceAll("d12", "d12min2");
+                      }
+                    }else if(initialAdept !== "nochange" && initialChange == "remove" && currentSpell.system.damage.parts.length > 0){
+                      for (let d = 0;  d < currentSpell.system.damage.parts.length; d++) {
+                        if(currentSpell.system.damage.parts[d][1] == initialAdept && currentSpell.system.damage.parts[d][0].includes("min2") == true){
+                          arrayAdept[d][0] = currentSpell.system.damage.parts[d][0].replaceAll("d4min2", "d4").replaceAll("d6min2", "d6").replaceAll("d8min2", "d8").replaceAll("d10min2", "d10").replaceAll("d12min2", "d12");
+                          successCount += 1;
+                        }
+                      }
+                      if(successCount >= currentSpell.system.damage.parts.length){
+                        versatileAdept = currentSpell.system.damage.versatile.replaceAll("d4min2", "d4").replaceAll("d6min2", "d6").replaceAll("d8min2", "d8").replaceAll("d10min2", "d10").replaceAll("d12min2", "d12");
+                        scalingAdept = currentSpell.system.scaling.formula.replaceAll("d4min2", "d4").replaceAll("d6min2", "d6").replaceAll("d8min2", "d8").replaceAll("d10min2", "d10").replaceAll("d12min2", "d12");
+                      }
+                    }
+                    
+                    await currentSpell.update({'system.preparation.mode': currentPrep, 'system.preparation.prepared': currentStatus, 'system.ability': currentMod, 'system.uses.max': currentNum, 'system.uses.per': currentUses, 'system.damage.parts': arrayAdept, 'system.damage.versatile': versatileAdept, 'system.scaling.formula': scalingAdept, 'system.components.vocal': currentVerbal, 'system.components.somatic': currentSomatic, 'system.components.material': currentMaterial, 'system.components.concentration': currentConcentration, 'system.components.ritual': currentRitual});
+                    if(spellbookFilter === true && currentSpellbook !== "nochange"){
+                      await currentSpell.setFlag('spell-class-filter-for-5e', 'parentClass', currentSpellbook);
+                    }
+                    if(customSection === true && currentSec.toLowerCase().replaceAll(" ", "") !== "leaveunchanged" && currentSec.toLowerCase().replaceAll(" ", "") !== "leaveunedited" && currentSec.toLowerCase().replaceAll(" ", "") !== "nochange"){
+                      await currentSpell.setFlag('custom-character-sheet-sections', 'sectionName', currentSec);
+                    }
+                  }
+                });
+              }
+              
+              
+              const btn6 = html[0].querySelector('#prepareList');
+              if (btn6 !== null) {
+                btn6.addEventListener('click', async () => {
+                  let preparedArray = game.actors.get(searchCharacter).items.contents.filter((item) => item.type == 'spell' && item.system.preparation.mode == 'prepared' && item.system.preparation.prepared === true && item.system.level > 0);
+                  let preparedTable = ``;
+                  for (let s = 0; s < preparedArray.length; s++) {
+                    let itemOnclock = `onclick="game.actors.get('${searchCharacter}').items.get('${preparedArray[s].id}').sheet.render(true);" oncontextmenu="game.actors.get('${searchCharacter}').items.get('${preparedArray[s].id}').use();"`;
+                    if(itemMacros === true){
+                      itemOnclick = `onclick="game.actors.get('${searchCharacter}').items.get('${preparedArray[s].id}').sheet.render(true);" oncontextmenu="if(game.actors.get('${searchCharacter}').items.get('${preparedArray[s].id}').hasMacro() === true){game.actors.get('${searchCharacter}').items.get('${preparedArray[s].id}').executeMacro();}else{game.actors.get('${searchCharacter}').items.get('${preparedArray[s].id}').use();}"`;
+                    }
+                    preparedTable += `<button style="width:98%; margin:${smallMargin} 1%; text-align:left;" title="Click to Open Spell Information&#10Left-Click to Cast ${preparedArray[s].name.replaceAll("'", "\`")}" value="${preparedArray[s].id}" ${itemOnclick}><span style="font-family:${monospace}; display:inline-block; vertical-align:top; letter-spacing:${letterSpacing};">[Lvl. ${preparedArray[s].system.level}]</span> ${preparedArray[s].name.replaceAll("'", "\`")}</button>`;
+                  }
+                  if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined){
+                    document.querySelector('#prepared-results').querySelector(".window-title").innerHTML = `${specifiedCharacter}'s `+preparedArray.length+` Prepared Spells`;
+                    document.querySelector('#prepared-results').querySelector(".dialog-content").innerHTML = `<style>#prepared-results {min-width: ${minWidth};}</style>`+preparedTable;
+                  }else{
+                    new Dialog({
+                      title: `${specifiedCharacter}'s `+preparedArray.length+` Prepared Spells`,
+                      content: `<style>#prepared-results {min-width: ${minWidth};}</style>`+preparedTable,
+                      buttons: {}
+                    },{
+                      id: "prepared-results",
+                      resizable: true
+                    }).render(true);
+                  }
+                });
+              }
+              
+              const btn7 = html[0].querySelector('#prepareAll');
+              if (btn7 !== null) {
+                btn7.addEventListener('click', async () => {
+                  let buttonClass = html[0].getElementsByClassName('spellListButton');
+                  for (let i = 0; i < buttonClass.length; i++) {
+                    buttonClass[i].nextSibling.style.backgroundColor = exclusionColor;
+                  }
+                  for (let p = 0; p < buttonClass.length; p++) {
+                    let currentSpell = game.actors.get(searchCharacter).items.get(buttonClass[p].value);
+                    if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined && p === (buttonClass.length-1)){
+                      setTimeout(() => {document.getElementById('prepareList').click();}, shortTimeout);
+                    }
+                    let sibling = buttonClass[p].nextSibling;
+                    sibling.style.backgroundColor = inclusionColor;
+                    if(currentSpell.system.preparation.mode == "prepared" && currentSpell.system.level > 0 && currentSpell.system.preparation.prepared == false){
+                      sibling.classList.remove('fa-'+unpreparedIcon);
+                      sibling.classList.add('fa-'+preparedIcon);
+                      sibling.setAttribute('title', sibling.getAttribute('title').replace('Unprepared', 'Prepared'));
+                      sibling.setAttribute(`onclick`, `if(this.classList.contains('fa-${unpreparedIcon}') === true){game.actors.get('${searchCharacter}').items.get('${buttonClass[p].value}').update({'system.preparation.prepared' : true}); this.setAttribute('title', this.getAttribute('title').replace('Unprepared', 'Prepared')); this.classList.remove('fa-${unpreparedIcon}'); this.classList.add('fa-${preparedIcon}');if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined){setTimeout(() => {document.getElementById('prepareList').click();}, ${shortTimeout})}}else{game.actors.get('${searchCharacter}').items.get('${buttonClass[p].value}').update({'system.preparation.prepared' : false});this.setAttribute('title', this.setAttribute('title', this.getAttribute('title').replace('Prepared', 'Unprepared')); this.classList.remove('fa-${preparedIcon}'); this.classList.add('fa-${unpreparedIcon}');if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined){setTimeout(() => {document.getElementById('prepareList').click();}, ${shortTimeout})}}`);
+                      await currentSpell.update({'system.preparation.prepared': true});
+                    }
+                  }
+                });
+              }
+              
+              const btn8 = html[0].querySelector('#unprepareAll');
+              if (btn8 !== null) {
+                btn8.addEventListener('click', async () => {
+                  let buttonClass = html[0].getElementsByClassName('spellListButton');
+                  for (let i = 0; i < buttonClass.length; i++) {
+                    buttonClass[i].nextSibling.style.backgroundColor = exclusionColor;
+                  }
+                  for (let p = 0; p < buttonClass.length; p++) {
+                    let currentSpell = game.actors.get(searchCharacter).items.get(buttonClass[p].value);
+                    if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined && p === (buttonClass.length-1)){
+                      setTimeout(() => {document.getElementById('prepareList').click();}, shortTimeout);
+                    }
+                    let sibling = buttonClass[p].nextSibling;
+                    sibling.style.backgroundColor = inclusionColor;
+                    if(currentSpell.system.preparation.mode == "prepared" && currentSpell.system.level > 0 && currentSpell.system.preparation.prepared == true){
+                      sibling.classList.remove('fa-'+preparedIcon);
+                      sibling.classList.add('fa-'+unpreparedIcon);
+                      sibling.setAttribute('title', sibling.getAttribute('title').replace('Prepared', 'Unprepared'));
+                      sibling.setAttribute(`onclick`, `if(this.classList.contains('fa-${unpreparedIcon}') === true){game.actors.get('${searchCharacter}').items.get('${buttonClass[p].value}').update({'system.preparation.prepared' : true}); this.setAttribute('title', this.getAttribute('title').replace('Unprepared', 'Prepared')); this.classList.remove('fa-${unpreparedIcon}'); this.classList.add('fa-${preparedIcon}');if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined){setTimeout(() => {document.getElementById('prepareList').click();}, ${shortTimeout})}}else{game.actors.get('${searchCharacter}').items.get('${buttonClass[p].value}').update({'system.preparation.prepared' : false});this.setAttribute('title', this.setAttribute('title', this.getAttribute('title').replace('Prepared', 'Unprepared')); this.classList.remove('fa-${preparedIcon}'); this.classList.add('fa-${unpreparedIcon}');if(document.querySelector('#prepared-results') !== null && document.querySelector('#prepared-results') !== undefined){setTimeout(() => {document.getElementById('prepareList').click();}, ${shortTimeout})}}`);
+                      await currentSpell.update({'system.preparation.prepared': false});
+                    }
+                  }
+                });
+              }
+              
+            },
+            },{
+            id: "search-results",
+            resizable: true
+          }).render(true);
+        }
+        
+        if (typeof args === 'undefined' || args === undefined || args === null || args.length < 2) {
+          const characters = game.actors;
+          let listOptions = '';
+          const targets = Array.from(game.user.targets);
+          characters.forEach((character) => {
+            if (character.permission > 2) {
+              let selected = '';
+              if (targets.length > 0) {
+                if (targets[0] !== null && targets[0] !== undefined && targets[0] !== '' && targets[0].actor.id == character.id) {
+                  selected = 'selected';
+                }
+              } else if (game.user.character !== null && game.user.character !== undefined && character.id == game.user.character.id) {
+                selected = 'selected';
+              }
+              listOptions += `<option value='${character.id}' ${selected}>${character.name}</option>`;
+            }
+          });
+          let memoryButton = '';
+          if (useCookies == true) {
+            memoryButton = '<button id="spellSearchMemory">Recall Last Search</button>';
+          }
+          
+          const myDialog = new Dialog({
+            title: 'Search Spells',
+            content: `<style>#spell-search {min-width: ${minWidth};}</style><div class="dialog-buttons"><button onclick="game.packs.get('${packName}').render(true)" style="margin-bottom:${largeMargin};">Open Spell Compendium</button></div><div class="dialog-buttons">${memoryButton}<button id="spellSearchClear">Clear Search</button></div><br><label for="characters" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Character</label><select id="characters" style="width:78%; margin:${largeMargin} 1%; display:inline-block;"><option value=""></option>${listOptions}</select><label for="location" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Search in</label><select id="location" style="width:78%; margin:${largeMargin} 1%; display:inline-block;"><option value="compendium">Spell Compendium</option><option value="sheet">Character Sheet</option></select><hr><label for="nameField" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Name</label><input type="text" id="nameField" name="nameField" style="width:78%; margin:${largeMargin} 1%; display:inline-block;" placeholder="Search contents of spell names here . . ."><label for="descField" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Descript.</label><input type="text" id="descField" name="descField" style="width:78%; margin:${largeMargin} 1%; display:inline-block;" placeholder="Search contents of spell descriptions here . . ."><hr><h3 style="padding:${headerPadding};" id="detailButton">Filter by Details <i class="fas fa-${categoryToggle}" style="display:inline-block; float:right;"></i></h3><div id="detailFilters" style="display:none;"><label for="classes" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Class</label><select id="classes" style="width:78%; margin:${largeMargin} 1%; display:inline-block;" onchange="if(document.querySelector('#classes').value == 'multi'){document.getElementById('secretClasses').style.display = 'block';}else{document.getElementById('secretClasses').style.display = 'none';}"><option value="">All</option>${classOptions}<option value="multi">Multiple</option></select><div id="secretClasses" style="display:none; text-align:center; font-weight:${labelWeight}; font-style:italic; border:${boxBorder}; margin:${largeMargin};">${classCheckboxes}</div><label for="levels" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Level</label><select id="levels" style="width:28%; margin:${largeMargin} 1%; display:inline-block;" onchange="if(document.querySelector('#levels').value == 'multi'){document.getElementById('secretLevels').style.display = 'block';}else{document.getElementById('secretLevels').style.display = 'none';}"><option value="">All</option>${levelOptions}<option value="multi">Multiple</option></select><label for="schools" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">School</label><select id="schools" style="width:28%; margin:${largeMargin} 1%; display:inline-block;" onchange="if(document.querySelector('#schools').value == 'multi'){document.getElementById('secretSchools').style.display = 'block';}else{document.getElementById('secretSchools').style.display = 'none';}"><option value="">All</option>${schoolOptions}<option value="multi">Multiple</option></select><div id="secretLevels" style="display:none; text-align:center; font-weight:${labelWeight}; font-style:italic; border:${boxBorder}; margin:${largeMargin};">${levelCheckboxes}</div><div id="secretSchools" style="display:none; text-align:center; font-weight:${labelWeight}; font-style:italic; border:${boxBorder}; margin:${largeMargin};">${schoolCheckboxes}</div><label for="actions" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Cast. Time</label><select id="actions" style="width:28%; margin:${largeMargin} 1%; display:inline-block;" onchange="if(document.querySelector('#actions').value == 'multi'){document.getElementById('secretActions').style.display = 'block';}else{document.getElementById('secretActions').style.display = 'none';}"><option value="">All</option>${actionOptions}<option value="multi">Multiple</option></select><label for="duration" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Duration</label><select id="duration" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="">All</option>${durationOptions}</select><div id="secretActions" style="display:none; text-align:center; font-weight:${labelWeight}; font-style:italic; border:${boxBorder}; margin:${largeMargin};">${actionCheckboxes}</div><label for="range" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Range</label><select id="rangeLogic" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="equal">Equal to</option><option value="greater">Greater than</option><option value="less">Less than</option></select><input id="rangeField" name="rangeField" style="width:18%; margin:${largeMargin} 1%; display:inline-block;" type="number" placeholder="i.e. 30"><select id="range" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="">All & Blank</option><option value="all">All</option><option value="blank">Blank</option>${rangeOptions}</select><label for="targets" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Target</label><select id="targets" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="">Any & Blank</option><option value="any">Any</option><option value="blank">Blank</option>${targetOptions}</select><label for="type" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Type</label><select id="type" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="">Any & Blank</option><option value="any">Any</option><option value="blank">Blank</option>${typeOptions}</select><label for="damage" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Damage</label><select id="damage" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="">Any & Blank (No Preference)</option><option value="any">Any (Damaging or Healing)</option><option value="blank">Blank (Non-Damaging)</option><option value="none">None</option><option value="multi">Multiple</option>${damageOptions}</select><label for="saves" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Save</label><select id="saves" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="">Any & Blank</option><option value="any">Any</option><option value="blank">Blank</option>${abilityOptions}</select></div><hr><h3 style="padding:${headerPadding};" id="componentButton">Filter by Components <i class="fas fa-${categoryToggle}" style="display:inline-block; float:right;" id="componentButton"></i></h3><div id="componentFilters" style="display:none;"><label for="concen" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Concen.</label><select id="concen" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="">Either</option><option value="false">No</option><option value="true">Yes</option></select><label for="ritual" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Ritual</label><select id="ritual" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="">Either</option><option value="false">No</option><option value="true">Yes</option></select><label for="verbal" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Verbal</label><select id="verbal" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="">Either</option><option value="false">No</option><option value="true">Yes</option></select><label for="somatic" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Somatic</label><select id="somatic" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="">Either</option><option value="false">No</option><option value="true">Yes</option></select><label for="material" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Material</label><select id="material" style="width:28%; margin:${largeMargin} 1%; display:inline-block;"><option value="">Either</option><option value="false">No</option><option value="true">Yes</option></select><label for="matField" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Spec. Mat.</label><input type="text" id="matField" name="matField" style="width:28%; margin:${largeMargin} 1%; display:inline-block;" placeholder="i.e. diamond"></div><hr><label for="sources" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Source</label><select id="sources" style="width:78%; margin:${largeMargin} 1%; display:inline-block;"><option value="">All WotC Publications</option><option disabled="disabled">----</option>${wotcBookOptions}${thirdBookOptions}</select><label for="sort" style="font-weight:${labelWeight}; width:18%; margin:${largeMargin} 1%; display:inline-block;">Sort</label><select id="sort" style="width:78%; margin:${largeMargin} 1%; display:inline-block;"><option value="">Alphabetically by Name</option><option value="level">Numerically by Level, Then by Name</option><option value="school">Alphabetically by School, Then by Name</option></select><br><br>`,
+            buttons: {
+              button1: {
+                label: 'Search',
+                callback: (html) => spellSearch(html),
+                  },
+                  },
+                  render: (html) => {
+                    const detailButton = html[0].querySelector('#detailButton');
+                    if (detailButton !== null) {
+                      detailButton.addEventListener('click', () => {
+                        const div = document.getElementById('detailFilters');
+                        div.style.display = div.style.display == 'none' ? 'block' : 'none';
+                      });
+                    }
+                    const componentButton = html[0].querySelector('#componentButton');
+                    if (componentButton !== null) {
+                      componentButton.addEventListener('click', () => {
+                        const div2 = document.getElementById('componentFilters');
+                        div2.style.display = div2.style.display == 'none' ? 'block' : 'none';
+                      });
+                    }
+                    const memoryButton = html[0].querySelector('#spellSearchMemory');
+                    if (memoryButton !== null) {
+                      memoryButton.addEventListener('click', () => {
+                        if (useCookies == true) {
+                          document.querySelector('#characters').value = getCookieValue('spellSearchCharacter');
+                          document.querySelector('#location').value = getCookieValue('spellSearchLocation');
+                          document.querySelector('#nameField').value = getCookieValue('spellSearchName');
+                          document.querySelector('#descField').value = getCookieValue('spellSearchDesc');
+                          document.querySelector('#classes').value = getCookieValue('spellSearchClass');
+                          const possibleClassBoxes = document.querySelectorAll('input[name=classCheckboxes]');
+                          const oldClassBoxes = getCookieValue('spellSearchClassBoxes');
+                          for (let c = 0; c < possibleClassBoxes.length; c++) {
+                            if (oldClassBoxes.includes(possibleClassBoxes[c].value) == true) {
+                              possibleClassBoxes[c].checked = true;
+                            }
+                          }
+                          if (document.querySelector('#classes').value == 'multi') { document.getElementById('secretClasses').style.display = 'block'; } else { document.getElementById('secretClasses').style.display = 'none'; }
+                          document.querySelector('#levels').value = getCookieValue('spellSearchLevel');
+                          const possibleLevelBoxes = document.querySelectorAll('input[name=levelCheckboxes]');
+                          const oldLevelBoxes = getCookieValue('spellSearchLevelBoxes');
+                          for (let c = 0; c < possibleLevelBoxes.length; c++) {
+                            if (oldLevelBoxes.includes(possibleLevelBoxes[c].value) == true) {
+                              possibleLevelBoxes[c].checked = true;
+                            }
+                          }
+                          if (document.querySelector('#levels').value == 'multi') { document.getElementById('secretLevels').style.display = 'block'; } else { document.getElementById('secretLevels').style.display = 'none'; }
+                          document.querySelector('#schools').value = getCookieValue('spellSearchSchool');
+                          const possibleSchoolBoxes = document.querySelectorAll('input[name=schoolCheckboxes]');
+                          const oldSchoolBoxes = getCookieValue('spellSearchSchoolBoxes');
+                          for (let c = 0; c < possibleSchoolBoxes.length; c++) {
+                            if (oldSchoolBoxes.includes(possibleSchoolBoxes[c].value) == true) {
+                              possibleSchoolBoxes[c].checked = true;
+                            }
+                          }
+                          if (document.querySelector('#schools').value == 'multi') { document.getElementById('secretSchools').style.display = 'block'; } else { document.getElementById('secretSchools').style.display = 'none'; }
+                          document.querySelector('#actions').value = getCookieValue('spellSearchAction');
+                          const possibleActionBoxes = document.querySelectorAll('input[name=actionCheckboxes]');
+                          const oldActionBoxes = getCookieValue('spellSearchActionBoxes');
+                          for (let c = 0; c < possibleActionBoxes.length; c++) {
+                            if (oldActionBoxes.includes(possibleActionBoxes[c].value) == true) {
+                              possibleActionBoxes[c].checked = true;
+                            }
+                          }
+                          if (document.querySelector('#actions').value == 'multi') { document.getElementById('secretActions').style.display = 'block'; } else { document.getElementById('secretActions').style.display = 'none'; }
+                          document.querySelector('#duration').value = getCookieValue('spellSearchDuration');
+                          document.querySelector('#rangeLogic').value = getCookieValue('spellSearchRangeLogic');
+                          document.querySelector('#rangeField').value = getCookieValue('spellSearchRangeNum');
+                          document.querySelector('#range').value = getCookieValue('spellSearchRange');
+                          document.querySelector('#targets').value = getCookieValue('spellSearchTarget');
+                          document.querySelector('#type').value = getCookieValue('spellSearchType');
+                          document.querySelector('#damage').value = getCookieValue('spellSearchDamage');
+                          document.querySelector('#saves').value = getCookieValue('spellSearchSave');
+                          if (document.querySelector('#classes').value !== '' || document.querySelector('#levels').value !== '' || document.querySelector('#schools').value !== '' || document.querySelector('#actions').value !== '' || document.querySelector('#duration').value !== '' || document.querySelector('#range').value !== '' || document.querySelector('#targets').value !== '' || document.querySelector('#type').value !== '' || document.querySelector('#damage').value !== '' || document.querySelector('#saves').value !== '') { document.getElementById('detailFilters').style.display = 'block'; } else { document.getElementById('detailFilters').style.display = 'none'; }
+                          document.querySelector('#concen').value = getCookieValue('spellSearchConcen');
+                          document.querySelector('#ritual').value = getCookieValue('spellSearchRitual');
+                          document.querySelector('#verbal').value = getCookieValue('spellSearchVerbal');
+                          document.querySelector('#somatic').value = getCookieValue('spellSearchSomatic');
+                          document.querySelector('#material').value = getCookieValue('spellSearchMaterial');
+                          document.querySelector('#matField').value = getCookieValue('spellSearchSM');
+                          if (document.querySelector('#concen').value !== '' || document.querySelector('#ritual').value !== '' || document.querySelector('#verbal').value !== '' || document.querySelector('#somatic').value !== '' || document.querySelector('#material').value !== '' || document.querySelector('#matField').value !== '') { document.getElementById('componentFilters').style.display = 'block'; } else if (document.getElementById('componentlFilters') !== null && document.getElementById('componentlFilters') !== undefined) { document.getElementById('componentlFilters').style.display = 'none'; }
+                          document.querySelector('#sources').value = getCookieValue('spellSearchSource');
+                          document.querySelector('#sort').value = getCookieValue('spellSearchSort');
+                        }
+                      });
+                    }
+                    const clearButton = html[0].querySelector('#spellSearchClear');
+                    if (clearButton !== null) {
+                      clearButton.addEventListener('click', () => {
+                        if (targets.length > 0 && targets[0] !== null && targets[0] !== undefined && targets[0] !== '' && game.actors.get(targets[0].actor.id).permission > 2) {
+                          document.querySelector('#characters').value = targets[0].actor.id;
+                        } else if (game.user.character !== null && game.user.character !== undefined && character.id == game.user.character.id) {
+                          document.querySelector('#characters').value = game.user.character.id;
+                        } else {
+                          document.querySelector('#characters').value = '';
+                        }
+                        document.querySelector('#location').value = 'compendium';
+                        document.querySelector('#nameField').value = '';
+                        document.querySelector('#descField').value = '';
+                        document.querySelector('#classes').value = '';
+                        const possibleClassBoxes = document.querySelectorAll('input[name=classCheckboxes]');
+                        for (let c = 0; c < possibleClassBoxes.length; c++) {
+                          possibleClassBoxes[c].checked = false;
+                        }
+                        document.querySelector('#levels').value = '';
+                        const possibleLevelBoxes = document.querySelectorAll('input[name=levelCheckboxes]');
+                        for (let c = 0; c < possibleLevelBoxes.length; c++) {
+                          possibleLevelBoxes[c].checked = false;
+                        }
+                        document.getElementById('secretLevels').style.display = 'none';
+                        const possibleSchoolBoxes = document.querySelectorAll('input[name=schoolCheckboxes]');
+                        for (let c = 0; c < possibleSchoolBoxes.length; c++) {
+                          possibleSchoolBoxes[c].checked = false;
+                        }
+                        document.getElementById('secretActions').style.display = 'none';
+                        const possibleActionBoxes = document.querySelectorAll('input[name=actionCheckboxes]');
+                        for (let c = 0; c < possibleActionBoxes.length; c++) {
+                          possibleActionBoxes[c].checked = false;
+                        }
+                        document.getElementById('secretSchools').style.display = 'none';
+                        document.getElementById('detailFilters').style.display = 'none';
+                        document.getElementById('componentFilters').style.display = 'none';
+                        document.querySelector('#schools').value = '';
+                        document.querySelector('#actions').value = '';
+                        document.querySelector('#duration').value = '';
+                        document.querySelector('#rangeLogic').value = 'equal';
+                        document.querySelector('#rangeField').value = '';
+                        document.querySelector('#range').value = '';
+                        document.querySelector('#targets').value = '';
+                        document.querySelector('#type').value = '';
+                        document.querySelector('#damage').value = '';
+                        document.querySelector('#saves').value = '';
+                        document.querySelector('#concen').value = '';
+                        document.querySelector('#ritual').value = '';
+                        document.querySelector('#verbal').value = '';
+                        document.querySelector('#somatic').value = '';
+                        document.querySelector('#material').value = '';
+                        document.querySelector('#matField').value = '';
+                        document.querySelector('#sources').value = '';
+                        document.querySelector('#sort').value = '';
+                      });
+                    }
+                  },
+                  },{
+                  id: "spell-search",
+                  resizable: true
+                }).render(true);
+              } else {
+                spellSearch(args);
+              }
