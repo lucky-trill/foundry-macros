@@ -1,0 +1,176 @@
+const currentScene = game.canvas.scene;
+let minDim = currentScene.dimensions.sceneRect.width;
+if (currentScene.dimensions.sceneRect.width > currentScene.dimensions.sceneRect.height) {
+    minDim = currentScene.dimensions.sceneRect.height;
+}
+const maxEdit = (minDim / currentScene.dimensions.size) - 1;
+
+let gridOptions = `<option value="0" selected>0 Grid Squares</option>`;
+for (let i = 1; i <= maxEdit; i++) {
+    gridOptions += `<option value="-` + i + `">-` + i + ` Grid Squares</option>`;
+}
+for (let g = 1; g <= maxEdit; g++) {
+    gridOptions = `<option value="` + g + `">` + g + ` Grid Squares</option>` + gridOptions;
+}
+
+new Dialog({
+    title: `Add or Subtract "Padding" for Players`,
+    content: `<label for="yHeight" style="font-weight: bold; display: inline-block; width: 38%; margin: 0px 1% 4px 1%;">Vertical:</label><select name="yHeight" id="yHeight" style="display: inline-block; width: 60%; margin: 0px 0% 4px 0%;">${gridOptions}</select><label for="xWidth" style="font-weight: bold; display: inline-block; width: 38%; margin: 0px 1% 4px 1%;">Horizontal:</label><select name="xWidth" id="xWidth" style="display: inline-block; width: 60%; margin: 0px 0% 4px 0%;">${gridOptions}</select><label for="color" style="font-weight: bold; display: inline-block; width: 38%; margin: 0px 1% 4px 1%;">Color:</label><input name="color" id="color" style="display: inline-block; width: 60%; margin: 0px 0% 4px 0%;" placeholder="Optional - Input Hex Code" type="text" maxlength="7"><label for="texture" style="font-weight: bold; display: inline-block; width: 38%; margin: 0px 1% 4px 1%;">Texture:</label><input name="texture" id="texture" style="display: inline-block; width: 60%; margin: 0px 0% 4px 0%;" placeholder="Optional - Input Image Path or URL" type="text">`,
+    buttons: {
+        submit: {
+            icon: '<i class="fas fa-check"></i>',
+            label: "Add or Subtract Padding",
+            callback: (html) => addPadding(parseInt(html.find("select#yHeight").val()), parseInt(html.find("select#xWidth").val()), html.find("input#color").val(), html.find("input#texture").val())
+        }
+    },
+    default: "submit"
+}).render(true);
+
+async function addPadding(inputYHeight, inputXWidth, newColor, newTexture) {
+
+    if (inputYHeight !== 0 || inputXWidth !== 0 || /^#[0-9A-F]{6}$/i.test(newColor) === true || (newTexture.length > 4 && newTexture !== currentScene.background.src)) {
+
+        const yheightPadOld = currentScene.dimensions.sceneY;
+        const xheightPadOld = currentScene.dimensions.sceneX;
+        const yheightShift = inputYHeight * currentScene.grid.size;
+        const xwidthShift = inputXWidth * currentScene.grid.size;
+        const currentBG = currentScene.background.src;
+
+        let colorChange = currentScene.backgroundColor;
+        if (newColor !== "" && /^#[0-9A-F]{6}$/i.test(newColor) === true) {
+            colorChange = newColor;
+        }
+        let textureChange = "";
+        if (newTexture.length > 4 && newTexture !== currentBG) {
+            textureChange = newTexture;
+        } else if (newTexture.toLowerCase() == "keep" || newTexture.toLowerCase() == "stretch") {
+            textureChange = currentBG;
+        }
+
+        await currentScene.update({
+            'backgroundColor': newColor,
+            'background.src': textureChange,
+            'width': currentScene.width + xwidthShift * 2,
+            'height': currentScene.height + yheightShift * 2,
+        });
+
+        if (inputYHeight !== 0 || inputXWidth !== 0) {
+
+            const yheightPadDif = currentScene.dimensions.sceneY - yheightPadOld;
+            const xheightPadDif = currentScene.dimensions.sceneX - xheightPadOld;
+
+            let tokenUpdates = currentScene.tokens.map(token => {
+                return {
+                    _id: token.id,
+                    x: token.x + xwidthShift + xheightPadDif,
+                    y: token.y + yheightShift + yheightPadDif
+                }
+            });
+
+            await currentScene.updateEmbeddedDocuments("Token", tokenUpdates);
+
+            let templateUpdates = currentScene.templates.map(template => {
+                return {
+                    _id: template.id,
+                    x: template.x + xwidthShift + xheightPadDif,
+                    y: template.y + yheightShift + yheightPadDif
+                }
+            });
+
+            await currentScene.updateEmbeddedDocuments("MeasuredTemplate", templateUpdates);
+
+            let tileUpdates = currentScene.tiles.map(tile => {
+                return {
+                    _id: tile.id,
+                    x: tile.x + xwidthShift + xheightPadDif,
+                    y: tile.y + yheightShift + yheightPadDif
+                }
+            });
+
+            await currentScene.updateEmbeddedDocuments("Tile", tileUpdates);
+
+            let drawingUpdates = currentScene.drawings.map(drawing => {
+                return {
+                    _id: drawing.id,
+                    x: drawing.x + xwidthShift + xheightPadDif,
+                    y: drawing.y + yheightShift + yheightPadDif
+                }
+            });
+
+            await currentScene.updateEmbeddedDocuments("Drawing", drawingUpdates);
+
+            let wallUpdates = currentScene.walls.map(wall => {
+                const x1 = wall.c[0];
+                const y1 = wall.c[1];
+                const x2 = wall.c[2]
+                const y2 = wall.c[3];
+                return {
+                    _id: wall.id,
+                    c: [x1 + xwidthShift + xheightPadDif, y1 + yheightShift + yheightPadDif, x2 + xwidthShift + xheightPadDif, y2 + yheightShift + yheightPadDif]
+                }
+            });
+
+            await currentScene.updateEmbeddedDocuments("Wall", wallUpdates);
+
+            let lightUpdates = currentScene.lights.map(light => {
+                return {
+                    _id: light.id,
+                    x: light.x + xwidthShift + xheightPadDif,
+                    y: light.y + yheightShift + yheightPadDif
+                }
+            });
+
+            await currentScene.updateEmbeddedDocuments("AmbientLight", lightUpdates);
+
+            let noteUpdates = currentScene.notes.map(note => {
+                return {
+                    _id: note.id,
+                    x: note.x + xwidthShift + xheightPadDif,
+                    y: note.y + yheightShift + yheightPadDif
+                }
+            });
+
+            await currentScene.updateEmbeddedDocuments("Note", noteUpdates);
+
+            if (currentBG !== null && currentBG !== undefined && currentBG !== "" && newTexture !== currentBG && newTexture.toLowerCase() !== "keep" && newTexture.toLowerCase() !== "stretch") {
+                const newTile = {
+                    "texture": {
+                        "src": currentBG,
+                        "scaleX": 1,
+                        "scaleY": 1,
+                        "offsetX": 0,
+                        "offsetY": 0,
+                        "rotation": 0,
+                        "tint": null
+                    },
+                    "x": currentScene.dimensions.sceneRect.x + xwidthShift,
+                    "y": currentScene.dimensions.sceneRect.y + yheightShift,
+                    "width": currentScene.dimensions.sceneRect.width - xwidthShift * 2,
+                    "height": currentScene.dimensions.sceneRect.height - yheightShift * 2,
+                    "overhead": false,
+                    "z": 100,
+                    "rotation": 0,
+                    "alpha": 1,
+                    "hidden": false,
+                    "locked": false,
+                    "roof": false,
+                    "occlusion": {
+                        "mode": 1,
+                        "alpha": 0,
+                        "radius": null
+                    },
+                    "video": {
+                        "loop": true,
+                        "autoplay": true,
+                        "volume": 0
+                    },
+                    "flags": {}
+                }
+                await canvas.scene.createEmbeddedDocuments("Tile", [newTile]);
+            }
+
+        }
+
+    }
+
+}
