@@ -1,56 +1,111 @@
-var defaultToCharacter = false; //"true" means the dialog will select a character to speak as by default; "false" means the dialog will select to speak as you, the player, by default.
-var activePlayersOnly = false; //"true" means the dialog is only populated with active players currently in the session; "false" means the dialog is populated with all players in the world.
-var warnIfNoTargets = true; //"true" means your whisper will not be posted if you did not select a player; "false" means your whisper will be posted for all players to see if you do not select a player.
-var userConfigCharacterOnly = true; //Changes what appears when you hover on a player's name. "true" shows only the name of the character bound to them in their User Configuration; "false" shows a list of names for all characters they own. GMs and Assistant GMs do not get character lists regardless; they're labeled with their position.
+const defaultToCharacter = false; //"true" means the dialog will select a character to speak as by default; "false" means the dialog will select to speak as you, the player, by default.
+const activePlayersOnly = false; //"true" means the dialog is only populated with active players currently in the session; "false" means the dialog is populated with all players in the world.
+const warnIfNoTargets = true; //"true" means your whisper will not be posted if you did not select a player; "false" means your whisper will be posted for all players to see if you do not select a player.
+const userConfigCharacterOnly = true; //Changes what appears when you hover on a player's name. "true" shows only the name of the character bound to them in their User Configuration; "false" shows a list of names for all characters they own. GMs and Assistant GMs do not get character lists regardless; they're labeled with their position.
+const transferMessage = true; //"true" means the macro will grab what you've already written in the chat tab textarea when it opens and put what you write in the macro dialog textarea back if you click "Close"; "false" means it won't.
+const showWordCount = true //"true" means the macro will show a word count for your whisper message in the dialog; "false" means it won't.
 
+const requestReply = true; //"true" means that reply requesting options will display under the right circumstances; "false" means they are never displayed.
+const requestReplyGMOnly = false; //"true" means that only GMs can request replies; "false" means any player can.
+const replyDefault = false; //"true" means that requesting a reply is "yes" by default; "false" means it is "no" by default.
+const defaultReply = "freeform"; //"multi" means that the requested reply type is multiple choice by default; "mixed" means multiple choice and freeform; anything else means it is freeform by default.
+const replyLabel = "Click Here to Reply"; //Text for labeling reply button. Does not work with Inline Chats.
+const replyMessageStyle = "font-style: italic;"; //CSS styling for how a chosen multiple-choice answer should stand out in the chat message.
+const defaultOptions = `A. Gondor
+B. Angmar
+C. Arnor
+D. Rohan`; //Default options for a multiple choice reply.
 
+//Macro by Trill/lady_of_luck. Don't edit below this line unless you know what you're doing.
 
+const defaultStyle = `display: inline-block; vertical-align: middle;`;
+const checkboxContainer = `style="${defaultStyle} width: 31%; margin: 0px 0% 0px 2%; text-align: left;"`
+const checkboxStyle = `style="${defaultStyle} width: 15%; margin: 0px 4% 0px 0%"`;
+const checkboxLabel = `style="${defaultStyle} width: 81%; margin: 0px;"`;
+const labelStyle = `style="${defaultStyle} width: 24%; margin: 0px 2% 5px 0%; font-weight: bold;"`;
+const spanStyle = `style="${defaultStyle} width: 72%; margin: 0px 0% 5px 2%; text-align: center;"`;
+const selectStyle = `style="${defaultStyle} width: 72%; margin: 0px 0% 5px 2%;"`;
+const textareaStyle = `style="${defaultStyle} margin: 0px 0px 5px 0px;"`;
+const radioStyle = `style="${defaultStyle} width: 7%; margin: 0px 0% 5px 0%;"`;
+const speakerStyle1 = `style="${defaultStyle} width: 20%; margin: 5px 2%; text-align:left;"`;
+const speakerStyle2 = `style="${defaultStyle} width: 62%; padding: 0px 0% 0px 4%; text-align:left;"`;
+const selectStyle2 = `style="${defaultStyle} width:100%;"`;
+const selectStyle3 = `style="${defaultStyle} width:100%; margin: 0px 0% 5px 0%;"`;
 
-var check1 = "checked";
-var check2 = "";
+let choicesStyle = `style="display: none; vertical-align: middle; margin: 0px 0px 5px 0px;"`;
+if(replyDefault && jointCheck && (defaultReply === "multi" || defaultReply === "mixed")){
+	choicesStyle = `style="display: inline-block; vertical-align: middle; margin: 0px 0px 5px 0px;"`;
+}
+
+let replySelected = ``;
+let replyStyle = `style="display: none;"`;
+if(replyDefault && jointCheck){
+	replySelected = `selected`;
+	replyStyle = `style="display: block;"`;
+}
+
+let multiSelected = ``;
+let mixSelected = ``;
+if(defaultReply === "multi"){
+	multiSelected = `selected`;
+}else if(defaultReply === "mixed"){
+	mixSelected = `selected`;
+}
+
+const macroName = this.name;
+const macroUuid = this.uuid;
+const role = game.user.role;
+const macroExec = game.modules.get("inline-macro-execution")?.active;
+const inlineChat = game.modules.get("inline-chats")?.active;
+let jointCheck = false;
+if(macroExec || inlineChat){
+	jointCheck = true;	
+}
+
+let check1 = "checked";
+let check2 = "";
 if (defaultToCharacter === true) {
     check1 = "";
     check2 = "checked";
 }
 
-var whisperSpeakerID = "";
-if (game.user.character !== null && game.user.character !== undefined) {
+let whisperSpeakerID = "";
+if (game.user.character) {
     whisperSpeakerID = game.user.character.id
 }
-if (canvas.tokens.controlled[0] !== undefined && canvas.tokens.controlled[0].actor !== null) {
+if (canvas.tokens.controlled[0] && canvas.tokens.controlled[0].actor) {
     whisperSpeakerID = canvas.tokens.controlled[0].actor.id;
 }
-if (activePlayersOnly === true) {
-    var players = game.users.filter(player => player.active);
-} else {
-    var players = game.users;
+let players = game.users;
+if (activePlayersOnly) {
+    players = game.users.filter(player => player.active);
 }
-var characters = game.actors;
+const characters = game.actors;
 
-var checkOptions = "";
-var targets = Array.from(game.user.targets);
+let checkOptions = "";
+const targets = Array.from(game.user.targets);
 players.forEach(player => {
     if (player.id !== game.user.id) {
-        var checked = "";
+        let checked = "";
         if (targets.length > 0) {
             for (let i = 0; i < targets.length; i++) {
-                if (game.actors.get(targets[i].data.actorId).data.permission[player.id] !== undefined && game.actors.get(targets[i].data.actorId).data.permission[player.id] > 2) {
+                if (game.actors.get(targets[i].data.actorId).data.permission[player.id] && game.actors.get(targets[i].data.actorId).data.permission[player.id] > 2) {
                     checked = "checked";
                 }
             }
         }
-        var ownedCharacters = "";
+        let ownedCharacters = "";
         if (player.role == 4) {
             ownedCharacters = "Gamemaster";
         } else if (player.role == 3) {
             ownedCharacters = "Assistant Gamemaster";
-        } else if (userConfigCharacterOnly == true && player.character !== null && player.character !== undefined) {
+        } else if (userConfigCharacterOnly == true && player.character) {
             ownedCharacters = player.character.name;
         } else {
             characters.forEach(character => {
                 if (character.data.permission[`${player.id}`] > 2) {
-                    var charName = character.name.replace(/'/g, '`');
-                    var startSymbol = "; ";
+                    let charName = character.name.replace(/'/g, '`');
+                    let startSymbol = "; ";
                     if (ownedCharacters == "") {
                         startSymbol = "";
                     }
@@ -58,13 +113,13 @@ players.forEach(player => {
                 }
             });
         }
-        checkOptions += `<input type='checkbox' id='${player.id}' name='${player.id}' value='${player.name}' ${checked} style='display:inline-block; vertical-align:middle; width:5%; margin:0px;'><label for='${player.id}' style='display:inline-block; vertical-align:middle; width:26%; margin:0px 1%; text-align:left;' title='${ownedCharacters}'>${player.name}</label>`;
+        checkOptions += `<span ${checkboxContainer}><input type='checkbox' id='${player.id}' name='${player.id}' value='${player.name}' ${checked} ${checkboxStyle}><label for='${player.id}' ${checkboxLabel} title='${ownedCharacters}'>${player.name}</label></span>`;
     }
 });
 
-var listOptions = "";
+let listOptions = "";
 characters.forEach(character => {
-    var selected = "";
+    let selected = "";
     if (character.id == whisperSpeakerID) {
         selected = "selected";
     }
@@ -73,35 +128,168 @@ characters.forEach(character => {
     }
 });
 
-var currentMessage = $("#chat-message").val();
+let currentMessage = ``;
+if(transferMessage && $("#chat-message").val() && $("#chat-message").val() !== ""  && (!jointCheck || typeof scope === "undefined" || !scope || !scope.type || scope.type !== "multi")){
+	currentMessage = $("#chat-message").val();
+	$("#chat-message").val("");
+}
+
+let targetOptions = ``;
+let targetName = `GM`;
+if(typeof scope !== "undefined" && scope && scope.id){
+	const targetDoc = game.users.find(u => u.id === game.user.id);
+	if(targetDoc){
+		targetName = targetDoc.name;
+	}
+}
+let title = `Replying to Whisper from ${targetName}`;
+if(!requestReply || (jointCheck && typeof scope !== "undefined" && (!scope || !scope.reply || scope.reply !== "yes")) || (!jointCheck && role > 2)){
+	title = `Whisper`;
+	targetOptions = `<label ${labelStyle}>Whisper to:</label><span ${spanStyle}>${checkOptions}</span>`;
+}
+let replyOptions = ``;
+if(requestReply && (!requestReplyGMOnly || role > 2)){
+	replyOptions = `<label for='requestReply' ${labelStyle}>Request Reply:</label><select name='requestReply' id='requestReply' ${selectStyle} onchange="if($(this).val() == 'yes' && ${jointCheck}){$('#whisperDialog #replyContainer').show();}else{$('#whisperDialog #replyContainer').hide();}"><option value="no">No</option><option value="yes" ${replySelected}>Yes</option></select><div id="replyContainer" ${replyStyle}><label for='replyType' ${labelStyle}>Reply Type:</label><select name='replyType' id='replyType' ${selectStyle} onchange="if(($(this).val() == 'multi' || $(this).val() == 'mixed') && ${jointCheck}){$('#whisperDialog #choices').show();}else{$('#whisperDialog #choices').hide();}"><option value="freefrom">Freeform</option><option value="multi" ${multiSelected}>Multiple Choice</option><option value="mixed" ${mixSelected}>Mixed</option></select><textarea id='choices' name='whisperChoices' rows='6' ${choicesStyle}>${defaultOptions}</textarea></div>`;
+}
+let multiOptions = ``;
+if(jointCheck && typeof scope !== "undefined" && scope && scope.type && (scope.type === "multi" || scope.type === "mixed") && scope.choices){
+	const multiArray = scope.choices.replaceAll(`"`, `'`).replaceAll(`\``, `'`).split(`|`);
+	multiOptions = `<select ${selectStyle3} id="multiOptions">`;
+	multiArray.forEach(m =>{
+		multiOptions += `<option value="${m}">${m}</option>`;
+	})
+	multiOptions += `</select>`;
+}
+let wordCount = ``;
+let onchange = ``;
+if(showWordCount && (!jointCheck || typeof scope === "undefined" || !scope || !scope.type || scope.type !== "multi")){
+	wordCount = `<label for='wordCount' ${labelStyle}>Word Count:</label><input type="text" name='wordCount' id='wordCount' disabled ${selectStyle} value="${currentMessage.replace(/(^\s*)|(\s*$)/gi,'').replace(/[ ]{2,}/gi,' ').replace(/\n /,"\n").split(' ').filter(function(str){return str!='';}).length}">`;
+	onchange = `onkeyup="$('#whisperDialog #wordCount').val($('#whisperDialog #message').val().replace(/(^\s*)|(\s*$)/gi,'').replace(/[ ]{2,}/gi,' ').replaceAll('\\n ','\\n').split(' ').filter(function(str){return str!='';}).length);" onchange="$('#whisperDialog #wordCount').val($('#whisperDialog #message').val().replace(/(^\s*)|(\s*$)/gi,'').replace(/[ ]{2,}/gi,' ').replaceAll('\\n ','\\n').split(' ').filter(function(str){return str!='';}).length);"`;
+}
+let textbox = `<textarea id='message' name='whisperText' rows='6' ${textareaStyle} ${onchange}>${currentMessage}</textarea>`;
+if(jointCheck && typeof scope !== "undefined" && scope && scope.type && scope.type === "multi"){
+	textbox = ``;
+}
 
 new Dialog({
-    title: "Whisper",
-    content: `<span style='display:inline-block; vertical-align: middle; width:20%; margin:0px 1%;'><b>Whisper to:</b></span><span style='display:inline-block; vertical-align:middle; width:78%; text-align:center; margin:0px;'>${checkOptions}</span><br><span style='display:inline-block; vertical-align: middle; width:20%; margin:5px 1% 0px 1%;'><b>Whisper as:</b></span><span style='display:inline-block; vertical-align:middle; width:78%; text-align:center; margin:5px 0px 0px 0px'><input type='radio' id='speaker1' name='speaker' value='yourself' ${check1} style='display:inline-block; vertical-align:middle; width:6%; margin:0px;'><label for='speaker1' style='display:inline-block; vertical-align:middle; width:20%; margin:0px 1%; text-align:left;'>Yourself</label><input type='radio' id='speaker2' name='speaker' value='character' ${check2} style='display:inline-block; vertical-align:middle; width:6%; margin:0px;'><label for='speaker2' style='display:inline-block; vertical-align:middle; width:61%; padding:0px 0px 0px 3%; margin:0px 1%; text-align:left;'><select name='characters' id='characters' style='width:100%;'>${listOptions}</select></label></span><br><textarea id='message' name='whisperText' rows='6' style='margin:5px 0px;'>${currentMessage}</textarea>`,
+    title: title,
+    content: `${targetOptions}<label ${labelStyle}>Whisper as:</label><span ${spanStyle}><input type='radio' id='speaker1' name='speaker' value='yourself' ${check1} ${radioStyle}><label for='speaker1' ${speakerStyle1}>Yourself</label><input type='radio' id='speaker2' name='speaker' value='character' ${check2} ${radioStyle}><label for='speaker2' ${speakerStyle2}><select name='characters' id='characters' ${selectStyle2}>${listOptions}</select></label></span>${multiOptions}${textbox}${wordCount}${replyOptions}`,
     buttons: {
         whisper: {
             label: "Send Whisper",
-            callback: (html) => createWhisper(html)
+            callback: async (html) => {
+				await createWhisper(html);
+			}
+        },
+		close: {
+            label: "Close",
+            callback:  async (html) => {
+
+				if(transferMessage && html.find('[name="whisperText"]')[0].value && html.find('[name="whisperText"]')[0].value !== ""){
+					$("#chat-message").val(html.find('[name="whisperText"]')[0].value);
+				}
+
+			}
         }
-    }
+    },
+	default: "close"
+},{
+    id: "whisperDialog",
+    resizable: true,
+	width: 425
 }).render(true);
 
-function createWhisper(html) {
-    const whisperID = new Array();
-    var integer = 0;
+async function createWhisper(html) {
+    let whisperID = new Array();
     players.forEach(player => {
         if (html.find('[name="' + player.id + '"]:checked').length > 0) {
-            whisperID[integer] = player.id;
-            integer = integer + 1;
-        }
+            whisperID.push(player.id);
+        }else if(!jointCheck && role < 2 && player.role > 2){
+            whisperID.push(player.id);
+	}else if(jointCheck && typeof scope !== "undefined" && scope && scope.reply && scope.reply === "yes" && scope.id && player.id === scope.id){
+            whisperID.push(player.id);
+	}
     });
-    var finalWhisperSpeaker = $("#characters").val();
-    var whisperMessage = html.find('[name="whisperText"]')[0].value;
-    if (whisperID.length < 1 && warnIfNoTargets === true) {
-        ui.notifications.warn("You did not select a target for the whisper, so it did not send.");
+    const finalWhisperSpeaker = $("#characters").val();
+	let multiParam = ``;
+	let reply = ``;
+	let multi = ``;
+	if(requestReply && $("#requestReply").val() && $("#requestReply").val() == "yes" && jointCheck){
+		const type = $("#whisperDialog #replyType").val();
+		const choices  = $("#whisperDialog #choices").val().replaceAll("\n", "|");
+		if(type == "multi" || type == "mixed"){
+			multiParam = ` type="${type}" choices="${choices}"`;
+			let choiceArray = choices.split("|");
+			if(choiceArray.length < 2){
+				choiceArray = choices.split("/");
+			}
+			if(choiceArray.length < 2){
+				choiceArray = choices.split(";");
+			}
+			if(choiceArray.length < 2){
+				choiceArray = choices.split(",");
+			}
+			let listStart = `<ul>`;
+			let listEnd = `</ul>`;
+			let list = ``;
+			let split = `NONE`;
+			choiceArray.forEach(c => {
+				if(c.includes("1. ")){
+					listStart = `<ol type="1">`;
+					listEnd = `</ol>`;
+					split = `. `;
+				}else if(c.includes("a. ")){
+					listStart = `<ol type="a">`;
+					listEnd = `</ol>`;
+					split = `. `;
+				}else if(c.includes("A. ")){
+					listStart = `<ol type="A">`;
+					listEnd = `</ol>`;
+					split = `. `;
+				}else if(c.includes("i. ")){
+					listStart = `<ol type="i">`;
+					listEnd = `</ol>`;
+					split = `. `;
+				}else if(c.includes("I. ")){
+					listStart = `<ol type="I">`;
+					listEnd = `</ol>`;
+					split = `. `;
+				}else if(c.includes("* ")){
+					split = `* `;
+				}else if(c.includes("- ")){
+					split = `- `;
+				}
+				let cleaned = c;
+				if(split !== "NONE"){
+					cleaned = c.split(split)[1];
+				}
+				list += `<li>${cleaned}</li>`;
+			});
+			multi = `${listStart}${list}${listEnd}`;
+		}
+		if(macroExec){
+			reply = `<p style="text-align: center;">[[/macroExec "${macroName}" reply="yes" id="${game.user.id}"${multiParam}]]{${replyLabel}}</p>`;
+		}else if(inlineChat){
+			reply = `<p style="text-align: center; display: inline-block; width: 100%; overflow: hidden;">[[! /macro ${macroName} reply="yes" id="${game.user.id}"${multiParam}]]</p>`;
+		}
+	}else if(requestReply && $("#requestReply").val() && $("#requestReply").val() == "yes" && !jointCheck){
+		reply = `<p style="text-align: center;">@UUID[${macroUuid}]{${replyLabel}}</p>`;
+	}
+	let finalChoice = ``;
+	if(jointCheck && typeof scope !== "undefined" && scope && scope.type && (scope.type === "multi" || scope.type === "mixed")){
+		finalChoice = `<p style="${replyMessageStyle}">${$("#whisperDialog #multiOptions").val()}</p>`;
+	}
+	let freeform = ``;
+	if(!jointCheck || typeof scope === "undefined" || !scope || !scope.type || scope.type !== "multi"){
+		freeform = `<p>${html.find('[name="whisperText"]')[0].value.replaceAll("\n\n", "</p><p>").replaceAll("\n", "<br>")}</p>`;
+	}
+    const whisperMessage = `${finalChoice}${freeform}${multi}${reply}`.replaceAll("<p><p>", "<p>").replaceAll("</p></p>", "</p>");
+    if (whisperID.length < 1 && warnIfNoTargets) {
+        ui.notifications.warn("You did not select a target for the whisper, so it did not send. Whisper content was posted to console if you need to copy it.");
+	console.log(whisperMessage);
     } else {
         if ($('#speaker2:checked').length > 0) {
-            ChatMessage.create({
+            await ChatMessage.create({
                 user: game.user.id,
                 speaker: ChatMessage.getSpeaker({
                     actor: game.actors.get(finalWhisperSpeaker)
@@ -110,7 +298,7 @@ function createWhisper(html) {
                 whisper: whisperID
             });
         } else {
-            ChatMessage.create({
+            await ChatMessage.create({
                 user: game.user.id,
                 content: whisperMessage,
                 whisper: whisperID
