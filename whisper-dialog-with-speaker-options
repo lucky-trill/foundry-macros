@@ -89,7 +89,7 @@ players.forEach(player => {
         let checked = "";
         if (targets.length > 0) {
             for (let i = 0; i < targets.length; i++) {
-                if (game.actors.get(targets[i].data.actorId).data.permission[player.id] && game.actors.get(targets[i].data.actorId).data.permission[player.id] > 2) {
+                if (game.actors.get(targets[i].actor.id).ownership[player.id] && game.actors.get(targets[i].actor.id).ownership[player.id] > 2) {
                     checked = "checked";
                 }
             }
@@ -103,7 +103,7 @@ players.forEach(player => {
             ownedCharacters = player.character.name;
         } else {
             characters.forEach(character => {
-                if (character.data.permission[`${player.id}`] > 2) {
+                if (character.ownership[`${player.id}`] > 2) {
                     let charName = character.name.replace(/'/g, '`');
                     let startSymbol = "; ";
                     if (ownedCharacters == "") {
