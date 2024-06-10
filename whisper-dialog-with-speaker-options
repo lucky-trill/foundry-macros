@@ -137,7 +137,7 @@ if(transferMessage && $("#chat-message").val() && $("#chat-message").val() !== "
 let targetOptions = ``;
 let targetName = `GM`;
 if(typeof scope !== "undefined" && scope && scope.id){
-	const targetDoc = game.users.find(u => u.id === game.user.id);
+	const targetDoc = game.users.find(u => u.id === scope.id);
 	if(targetDoc){
 		targetName = targetDoc.name;
 	}
