@@ -163,8 +163,8 @@ if(jointCheck && typeof scope !== "undefined" && scope && scope.type && (scope.t
 let wordCount = ``;
 let onchange = ``;
 if(showWordCount && (!jointCheck || typeof scope === "undefined" || !scope || !scope.type || scope.type !== "multi")){
-	wordCount = `<label for='wordCount' ${labelStyle}>Word Count:</label><input type="text" name='wordCount' id='wordCount' disabled ${selectStyle} value="${currentMessage.replace(/(^\s*)|(\s*$)/gi,'').replace(/[ ]{2,}/gi,' ').replace(/\n /,"\n").split(' ').filter(function(str){return str!='';}).length}">`;
-	onchange = `onkeyup="$('#whisperDialog #wordCount').val($('#whisperDialog #message').val().replace(/(^\s*)|(\s*$)/gi,'').replace(/[ ]{2,}/gi,' ').replaceAll('\\n ','\\n').split(' ').filter(function(str){return str!='';}).length);" onchange="$('#whisperDialog #wordCount').val($('#whisperDialog #message').val().replace(/(^\s*)|(\s*$)/gi,'').replace(/[ ]{2,}/gi,' ').replaceAll('\\n ','\\n').split(' ').filter(function(str){return str!='';}).length);"`;
+	wordCount = `<label for='wordCount' ${labelStyle}>Word Count:</label><input type="text" name='wordCount' id='wordCount' disabled ${selectStyle} value="${currentMessage.replace(/(^\s*)|(\s*$)/gi,'').replace(/[ ]{2,}/gi,' ').replace('\n',' ').split(' ').filter(function(str){return str!='';}).length}">`;
+	onchange = `onkeyup="$('#whisperDialog #wordCount').val($('#whisperDialog #message').val().replace(/(^\s*)|(\s*$)/gi,'').replace(/[ ]{2,}/gi,' ').replaceAll('\\n', ' ').split(' ').filter(function(str){return str!='';}).length);" onchange="$('#whisperDialog #wordCount').val($('#whisperDialog #message').val().replace(/(^\s*)|(\s*$)/gi,'').replace(/[ ]{2,}/gi,' ').replaceAll('\\n', ' ').split(' ').filter(function(str){return str!='';}).length);"`;
 }
 let textbox = `<textarea id='message' name='whisperText' rows='6' ${textareaStyle} ${onchange}>${currentMessage}</textarea>`;
 if(jointCheck && typeof scope !== "undefined" && scope && scope.type && scope.type === "multi"){
