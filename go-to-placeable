@@ -50,7 +50,6 @@ if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
         if (scene !== game.canvas.scene) {
             await scene.view();
         }
-        console.log(Number(scale));
         await canvas.pan({
             x: parseInt(x),
             y: parseInt(y),
