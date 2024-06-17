@@ -19,6 +19,8 @@ if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
         placeable = scene?.notes.find(n => n.label === scope.label);
     } else if (scope.text) {
         placeable = scene?.drawings.find(d => d.text === scope.text);
+    } else if (scope.name) {
+        placeable = scene?.tokens.find(t => t.name === scope.name);
     } else if (tagger && scope.tag) {
         placeable = Tagger.getByTag("test")[0];
     }
