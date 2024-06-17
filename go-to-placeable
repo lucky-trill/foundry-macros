@@ -7,16 +7,16 @@ const tagger = game.modules.get("tagger")?.active;
 if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
 
     if (scope.scene) {
-        scene = game.scenes.get(scene);
+        scene = game.scenes.get(scope.scene);
         if (!scene) {
-            scene = game.scenes.getName(scene);
+            scene = game.scenes.getName(scope.scene);
         }
     }
 
     if (scope.label) {
-        placeable = scene.notes.find(n => n.label === scope.label);
+        placeable = scene?.notes.find(n => n.label === scope.label);
     } else if (scope.text) {
-        placeable = scene.drawings.find(d => d.text === scope.text);
+        placeable = scene?.drawings.find(d => d.text === scope.text);
     } else if (tagger && scope.tag) {
         placeable = Tagger.getByTag("test")[0];
     }
