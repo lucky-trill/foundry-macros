@@ -1,7 +1,9 @@
 let placeable;
+let scale = 1;
 let scene = game.canvas.scene;
 let x;
 let y;
+let ping = false;
 const tagger = game.modules.get("tagger")?.active;
 
 if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
@@ -34,14 +36,34 @@ if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
         y = scope.y;
     }
 
+    if (scope.scale) {
+        scale = scope.scale;
+    }
+
+    if (["y", "yes", "t", "true"].includes(scope.ping)) {
+        ping = true;
+    } else if (["n", "no", "f", "false"].includes(scope.ping)) {
+        ping = false;
+    }
+
     if (x && y) {
         if (scene !== game.canvas.scene) {
             await scene.view();
         }
-        canvas.pan({
+        console.log(Number(scale));
+        await canvas.pan({
             x: parseInt(x),
-            y: parseInt(y)
+            y: parseInt(y),
+            scale: Number(scale)
         });
+        if (ping) {
+            canvas.ping({
+                x: parseInt(x),
+                y: parseInt(y)
+            }, {
+                pull: false
+            })
+        }
 
     }
 
