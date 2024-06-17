@@ -22,7 +22,11 @@ if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
     } else if (scope.name) {
         placeable = scene?.tokens.find(t => t.name === scope.name);
     } else if (tagger && scope.tag) {
-        placeable = Tagger.getByTag("test")[0];
+		let tagged = Tagger.getByTag("test");
+		if (scope.type) {
+			tagged = tagged.filter(p => p.documentName.toLowerCase() === scope.type.toLowerCase());
+		}
+        placeable = tagged[0];
     }
 
     if (scope.uuid) {
