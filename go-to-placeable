@@ -1,0 +1,48 @@
+let placeable;
+let scene = game.canvas.scene;
+let x;
+let y;
+const tagger = game.modules.get("tagger")?.active;
+
+if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
+
+    if (scope.scene) {
+        scene = game.scenes.get(scene);
+        if (!scene) {
+            scene = game.scenes.getName(scene);
+        }
+    }
+
+    if (scope.label) {
+        placeable = scene.notes.find(n => n.label === scope.label);
+    } else if (scope.text) {
+        placeable = scene.drawings.find(d => d.text === scope.text);
+    } else if (tagger && scope.tag) {
+        placeable = Tagger.getByTag("test")[0];
+    }
+
+    if (scope.uuid) {
+        placeable = await fromUuid(scope.uuid);
+        scene = placeable.parent;
+    }
+
+    if (placeable) {
+        x = placeable.x;
+        y = placeable.y;
+    } else if (scope.x && scope.y) {
+        x = scope.x;
+        y = scope.y;
+    }
+
+    if (x && y) {
+        if (scene !== game.canvas.scene) {
+            await scene.view();
+        }
+        canvas.pan({
+            x: parseInt(x),
+            y: parseInt(y)
+        });
+
+    }
+
+}
