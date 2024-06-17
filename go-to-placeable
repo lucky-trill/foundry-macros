@@ -22,7 +22,7 @@ if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
     } else if (scope.name) {
         placeable = scene?.tokens.find(t => t.name === scope.name);
     } else if (tagger && scope.tag) {
-        let tagged = Tagger.getByTag("test");
+        let tagged = Tagger.getByTag(scope.tag);
         if (scope.type) {
             tagged = tagged.filter(p => p.documentName.toLowerCase() === scope.type.toLowerCase());
         }
@@ -83,5 +83,12 @@ if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
         }
 
     }
+
+} else if (token) {
+
+    canvas.pan({
+        x: token.x,
+        y: token.y
+    });
 
 }
