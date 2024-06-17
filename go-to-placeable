@@ -22,10 +22,10 @@ if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
     } else if (scope.name) {
         placeable = scene?.tokens.find(t => t.name === scope.name);
     } else if (tagger && scope.tag) {
-		let tagged = Tagger.getByTag("test");
-		if (scope.type) {
-			tagged = tagged.filter(p => p.documentName.toLowerCase() === scope.type.toLowerCase());
-		}
+        let tagged = Tagger.getByTag("test");
+        if (scope.type) {
+            tagged = tagged.filter(p => p.documentName.toLowerCase() === scope.type.toLowerCase());
+        }
         placeable = tagged[0];
     }
 
@@ -35,8 +35,20 @@ if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
     }
 
     if (placeable) {
-        x = placeable.x;
-        y = placeable.y;
+        let xAdd = 0;
+        let yAdd = 0;
+        if (placeable.documentName === "Drawing") {
+            xAdd = Math.floor(placeable.shape?.width / 2);
+            yAdd = Math.floor(placeable.shape?.height / 2);
+        } else if (placeable.documentName === "Tile") {
+            xAdd = Math.floor(placeable.width / 2);
+            yAdd = Math.floor(placeable.height / 2);
+        } else if (placeable.documentName === "Token") {
+            xAdd = Math.floor(placeable.width * placeable.parent?.grid?.size / 2);
+            yAdd = Math.floor(placeable.height * placeable.parent?.grid?.size / 2);
+        }
+        x = placeable.x + xAdd;
+        y = placeable.y + yAdd;
     } else if (scope.x && scope.y) {
         x = scope.x;
         y = scope.y;
