@@ -5,6 +5,7 @@ let x;
 let y;
 let ping = false;
 const tagger = game.modules.get("tagger")?.active;
+const ctrl = event.ctrlKey;
 
 if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
 
@@ -81,6 +82,10 @@ if (typeof scope !== "undefined" && scope && Object.keys(scope).length > 0) {
                 pull: false
             })
         }
+		if (game.user.isGM && ctrl) {
+			await placeable.layer.activate();
+			placeable.object.control();
+		}
 
     }
 
