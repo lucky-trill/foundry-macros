@@ -1,0 +1,28 @@
+const defaultImage = `icons/svg/mystery-man.svg`;
+const defaultTitle = `Shared Image`;
+const labelStyle = `width: 20%; display: inline-block; margin: 0 auto 4px auto; font-weight: bold;`;
+const inputStyle = `width: 80%; display: inline-block; margin: 0 auto 4px auto;`;
+
+new Dialog({
+    title: `Share Image via URL or File Path`,
+    content: `<label for="i" style="${labelStyle}">Image:</label><input type="text" id="i" name="i" value="${defaultImage}" style="${inputStyle}"><br>
+	<label for="t" style="${labelStyle}">Title:</label><input type="text" id="t" name="t" value="${defaultTitle}" style="${inputStyle}">`,
+    buttons: {
+        share: {
+            icon: `<i class="fas fa-image"></i>`,
+            label: `Share Image`,
+            callback: (html) => {
+
+                const i = html[0].querySelector(`#i`).value;
+                const t = html[0].querySelector(`#t`).value;;
+
+                new ImagePopout(i, {
+                    title: t,
+                    shareable: true
+                }).render(true).shareImage();
+
+            }
+        }
+    },
+    default: "share"
+}).render(true);
