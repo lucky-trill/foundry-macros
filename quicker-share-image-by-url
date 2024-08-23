@@ -1,0 +1,8 @@
+const text = await navigator.clipboard.readText();
+if (text.match(/(?:https?|ftp):\/\/[\S]*\.(?:png|jpe?g|gif|svg|webp)(?:\?\S+=\S*(?:&\S+=\S*)*)?/gi)) {
+	new ImagePopout(text, {
+		shareable: true
+	}).render(true).shareImage();
+} else {
+	ui.notifications.warn(`Your clipboard does not currently contain an image URL or file path.`);	
+}
