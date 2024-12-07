@@ -39,7 +39,6 @@ if (typeof tile !== "undefined" && tile && typeof method !== "undefined" && meth
 
         const tT = canvas.scene.tokens.filter(t => tC.x1 < (t.x + t.width * canvas.grid.size) && t.x < tC.x2 && tC.y1 < (t.y + t.height * canvas.grid.size) && t.y < tC.y2 && !Tagger.hasTags(t, dupeTag));
         const pT = canvas.scene.tokens.filter(t => pC.x1 < (t.x + t.width * canvas.grid.size) && t.x < pC.x2 && pC.y1 < (t.y + t.height * canvas.grid.size) && t.y < pC.y2)
-console.log(pT);
 
         let xSwap = false;
         let ySwap = false;
@@ -50,7 +49,6 @@ console.log(pT);
             xSwap = true;
         }
 
-console.log(tT);
         tT.forEach(async t => {
             const dupe = pT.find(d => Tagger.hasTags(d, t.id) && Tagger.hasTags(d, dupeTag));
             let xVal = pC.x1 + t.x - tC.x1;
@@ -63,7 +61,7 @@ console.log(tT);
             }
             xVal = Math.round(xVal / canvas.grid.size) * canvas.grid.size;
             yVal = Math.round(yVal / canvas.grid.size) * canvas.grid.size;
-            if (method === "exit") {
+            if (method === "exit" && dupe && token.id === t.id) {
                 deletes.push(dupe.id);
             } else if (dupe && (dupe.x !== xVal || dupe.y !== yVal)) {
                 updates.push({
@@ -77,7 +75,7 @@ console.log(tT);
                 newToken.x = xVal;
                 newToken.y = yVal;
                 newToken.actorLink = false;
-                newToken.flags.tagger.tags = [t.id, dupeTag]
+                newToken.flags = {tagger: {tags: [t.id, dupeTag]}};
                 creates.push(newToken);
             }
         });
