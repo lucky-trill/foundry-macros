@@ -75,14 +75,8 @@ if (typeof tile !== "undefined" && tile && typeof method !== "undefined" && meth
                 newToken.x = xVal;
                 newToken.y = yVal;
                 newToken.actorLink = false;
-                if (newToken.flags.tagger?.tags) {
-                    newToken.tagger.tags = [t.id, dupeTag];
-                } else {
-                    newToken.flags = {
-                        tagger: {
-                            tags: [t.id, dupeTag]
-                        }
-                    };
+                newToken.flags.tagger = {
+                    tags: [t.id, dupeTag]
                 }
                 creates.push(newToken);
             }
