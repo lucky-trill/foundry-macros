@@ -1,5 +1,5 @@
-const piece1 = "-a*"; //Tag piece for identify "a" parts of paired mirror.
-const piece2 = "-b*"; //Tag piece for identify "b" parts of paired mirror.
+const piece1 = "-a*"; //Tag piece for identifying "a" parts of paired mirror.
+const piece2 = "-b*"; //Tag piece for identifying "b" parts of paired mirror.
 const mirrorPrefix = "mirror-piece"; //Start of tag for identify mirror raltionships.
 const dupeTag = "duplicate"; //Tag for identifying duplicates.
 
