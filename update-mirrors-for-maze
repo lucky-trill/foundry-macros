@@ -1,6 +1,6 @@
 const piece1 = "-a*"; //Tag piece for identifying "a" parts of paired mirror.
 const piece2 = "-b*"; //Tag piece for identifying "b" parts of paired mirror.
-const mirrorPrefix = "mirror-piece"; //Start of tag for identify mirror raltionships.
+const mirrorPrefix = "mirror-piece"; //Start of tag for identifying mirror relationships.
 const dupeTag = "duplicate"; //Tag for identifying duplicates.
 
 const updates = [];
@@ -9,7 +9,7 @@ const deletes = [];
 
 if (typeof tile !== "undefined" && tile && typeof method !== "undefined" && method) {
 
-    const tags = Tagger.getTags(tile)?.filter(t => t.includes(mirrorPrefix));
+    const tags = Tagger.getTags(tile)?.filter(t => t.startsWith(mirrorPrefix));
 
     tags.forEach(async tag => {
 
@@ -37,8 +37,9 @@ if (typeof tile !== "undefined" && tile && typeof method !== "undefined" && meth
             y2: pr.y + pr.height
         };
 
-        const tT = canvas.scene.tokens.filter(t => tC.x1 <= (t.x + t.width * canvas.grid.size) && t.x <= tC.x2 && tC.y1 <= (t.y + t.height * canvas.grid.size) && t.y <= tC.y2 && !Tagger.hasTags(t, dupeTag));
+        const tT = canvas.scene.tokens.filter(t => tC.x1 < (t.x + t.width * canvas.grid.size) && t.x < tC.x2 && tC.y1 < (t.y + t.height * canvas.grid.size) && t.y < tC.y2 && !Tagger.hasTags(t, dupeTag));
         const pT = canvas.scene.tokens.filter(t => pC.x1 < (t.x + t.width * canvas.grid.size) && t.x < pC.x2 && pC.y1 < (t.y + t.height * canvas.grid.size) && t.y < pC.y2)
+console.log(pT);
 
         let xSwap = false;
         let ySwap = false;
@@ -49,6 +50,7 @@ if (typeof tile !== "undefined" && tile && typeof method !== "undefined" && meth
             xSwap = true;
         }
 
+console.log(tT);
         tT.forEach(async t => {
             const dupe = pT.find(d => Tagger.hasTags(d, t.id) && Tagger.hasTags(d, dupeTag));
             let xVal = pC.x1 + t.x - tC.x1;
@@ -70,7 +72,7 @@ if (typeof tile !== "undefined" && tile && typeof method !== "undefined" && meth
                     y: yVal,
                     actorLink: false
                 });
-            } else {
+            } else if (!dupe) {
                 const newToken = t.toObject();
                 newToken.x = xVal;
                 newToken.y = yVal;
