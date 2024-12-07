@@ -1,0 +1,95 @@
+const piece1 = "-a*"; //Tag piece for identify "a" parts of paired mirror.
+const piece2 = "-b*"; //Tag piece for identify "b" parts of paired mirror.
+const mirrorPrefix = "mirror-piece"; //Start of tag for identify mirror raltionships.
+const dupeTag = "duplicate"; //Tag for identifying duplicates.
+
+const updates = [];
+const creates = [];
+const deletes = [];
+
+if (typeof tile !== "undefined" && tile && typeof method !== "undefined" && method) {
+
+    const tags = Tagger.getTags(tile)?.filter(t => t.includes(mirrorPrefix));
+
+    tags.forEach(async tag => {
+
+        const tag1 = tag;
+        let tag2;
+        if (tag1.includes(piece1)) {
+            tag2 = tag1.replace(piece1, piece2);
+        } else {
+            tag2 = tag1.replace(piece2, piece1);
+        }
+
+        const tl = Tagger.getByTag(tag1)[0];
+        const pr = Tagger.getByTag(tag2)[0];
+
+        const tC = {
+            x1: tl.x,
+            x2: tl.x + tl.width,
+            y1: tl.y,
+            y2: tl.y + tl.height
+        };
+        const pC = {
+            x1: pr.x,
+            x2: pr.x + pr.width,
+            y1: pr.y,
+            y2: pr.y + pr.height
+        };
+
+        const tT = canvas.scene.tokens.filter(t => tC.x1 <= (t.x + t.width * canvas.grid.size) && t.x <= tC.x2 && tC.y1 <= (t.y + t.height * canvas.grid.size) && t.y <= tC.y2 && !Tagger.hasTags(t, dupeTag));
+        const pT = canvas.scene.tokens.filter(t => pC.x1 < (t.x + t.width * canvas.grid.size) && t.x < pC.x2 && pC.y1 < (t.y + t.height * canvas.grid.size) && t.y < pC.y2)
+
+        let xSwap = false;
+        let ySwap = false;
+        if (tC.y1 !== pC.y1 && tC.y2 !== pC.y2) {
+            ySwap = true;
+        }
+        if (tC.x1 !== pC.x1 && tC.x2 !== pC.x2) {
+            xSwap = true;
+        }
+
+        tT.forEach(async t => {
+            const dupe = pT.find(d => Tagger.hasTags(d, t.id) && Tagger.hasTags(d, dupeTag));
+            let xVal = pC.x1 + t.x - tC.x1;
+            let yVal = pC.y1 + t.y - tC.y1;
+            if (xSwap) {
+                xVal = pC.x2 - t.x - t.height * canvas.grid.size + tC.x1;
+            }
+            if (ySwap) {
+                yVal = pC.y2 - t.y - t.height * canvas.grid.size + tC.y1;
+            }
+            xVal = Math.round(xVal / canvas.grid.size) * canvas.grid.size;
+            yVal = Math.round(yVal / canvas.grid.size) * canvas.grid.size;
+            if (method === "exit") {
+                deletes.push(dupe.id);
+            } else if (dupe && (dupe.x !== xVal || dupe.y !== yVal)) {
+                updates.push({
+                    _id: dupe.id,
+                    x: xVal,
+                    y: yVal,
+                    actorLink: false
+                });
+            } else {
+                const newToken = t.toObject();
+                newToken.x = xVal;
+                newToken.y = yVal;
+                newToken.actorLink = false;
+                newToken.flags.tagger.tags = [t.id, dupeTag]
+                creates.push(newToken);
+            }
+        });
+
+    });
+
+}
+
+if (updates.length > 0) {
+    await canvas.scene.updateEmbeddedDocuments("Token", updates);
+}
+if (creates.length > 0) {
+    await canvas.scene.createEmbeddedDocuments("Token", creates);
+}
+if (deletes.length > 0) {
+    await canvas.scene.deleteEmbeddedDocuments("Token", deletes);
+}
